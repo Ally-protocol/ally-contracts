@@ -5,22 +5,23 @@ class AllyValidator:
     class Vars:
         token_id_key = Bytes("token_id")
         
-    def on_create(self):
-        token_id = Btoi(Txn.application_args[0])
-        return Seq(
-            App.globalPut(self.Vars.token_id_key, token_id),
-            Approve()
-        )
-        
-    def on_setup(self):
+    def on_bootstrap(self):
         return Seq(
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields({
-                TxnField.type_enum: TxnType.AssetTransfer,
-                TxnField.xfer_asset: App.globalGet(self.Vars.token_id_key),
-                TxnField.asset_receiver: Global.current_application_address()
+                TxnField.type_enum: TxnType.AssetConfig,
+                TxnField.config_asset_total: Int(0xFFFFFFFFFFFFFFFF),
+                TxnField.config_asset_decimals: Int(6),
+                TxnField.config_asset_unit_name: Bytes("wALGO"),
+                TxnField.config_asset_name: Bytes("wALGO"),
+                TxnField.config_asset_url: Bytes("https://www.maxos.studio"),
+                TxnField.config_asset_manager: Global.zero_address(),
+                TxnField.config_asset_clawback: Global.zero_address(),
+                TxnField.config_asset_reserve: Global.zero_address(),
+                TxnField.config_asset_freeze: Global.zero_address(),
             }),
             InnerTxnBuilder.Submit(),
+            App.globalPut(self.Vars.token_id_key, InnerTxn.created_asset_id()),
             Approve()
         )
         
@@ -45,7 +46,7 @@ class AllyValidator:
     def on_call(self):
         on_call_method = Txn.application_args[0]
         return Cond(
-            [on_call_method == Bytes("setup"), self.on_setup()],
+            [on_call_method == Bytes("bootstrap"), self.on_bootstrap()],
             [on_call_method == Bytes("mint"), self.on_mint()],
             [on_call_method == Bytes("redeem"), self.on_redeem()],
             [on_call_method == Bytes("commit"), self.on_commit()]
@@ -53,15 +54,15 @@ class AllyValidator:
         
     def approval_program(self):
         program = Cond(
-            [Txn.application_id() == Int(0), self.on_create()],
-            [Txn.on_completion() == OnComplete.NoOp, self.on_call()],
             [
                 Or(
+                    Txn.application_id() == Int(0),
                     Txn.on_completion() == OnComplete.OptIn,
                     Txn.on_completion() == OnComplete.DeleteApplication
                 ),
                 Approve()
             ],
+            [Txn.on_completion() == OnComplete.NoOp, self.on_call()],
             [
                 Or(
                     Txn.on_completion() == OnComplete.CloseOut,
