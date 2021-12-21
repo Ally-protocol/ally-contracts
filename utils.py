@@ -3,6 +3,7 @@ from typing import Dict, Union, List, Any, Optional
 
 from algosdk import encoding
 from algosdk.v2client.algod import AlgodClient
+from algosdk.kmd import KMDClient
 from pyteal import compileTeal, Expr, Mode
 
 from account import Account
@@ -20,18 +21,22 @@ class PendingTxnResponse:
         self.poolError: str = response["pool-error"]
         self.txn: Dict[str, Any] = response["txn"]
 
-        self.application_index: Optional[int] = response.get("application-index")
+        self.application_index: Optional[int] = response.get(
+            "application-index")
         self.asset_index: Optional[int] = response.get("asset-index")
         self.close_rewards: Optional[int] = response.get("close-rewards")
         self.closing_amount: Optional[int] = response.get("closing-amount")
         self.confirmed_round: Optional[int] = response.get("confirmed-round")
-        self.global_state_delta: Optional[Any] = response.get("global-state-delta")
-        self.local_state_delta: Optional[Any] = response.get("local-state-delta")
+        self.global_state_delta: Optional[Any] = response.get(
+            "global-state-delta")
+        self.local_state_delta: Optional[Any] = response.get(
+            "local-state-delta")
         self.receiver_rewards: Optional[int] = response.get("receiver-rewards")
         self.sender_rewards: Optional[int] = response.get("sender-rewards")
 
         self.inner_txns: List[Any] = response.get("inner-txns", [])
-        self.logs: List[bytes] = [b64decode(ll) for ll in response.get("logs", [])]
+        self.logs: List[bytes] = [b64decode(ll)
+                                  for ll in response.get("logs", [])]
 
 
 def wait_for_transaction(
@@ -122,3 +127,32 @@ def get_balances(client: AlgodClient, account: str) -> Dict[int, int]:
         balances[asset_id] = amount
 
     return balances
+
+
+def get_genesis_accounts(url: str, token: str) -> List[Account]:
+    kmd = KMDClient(token, url)
+
+    wallets = kmd.list_wallets()
+    walletID = None
+    for wallet in wallets:
+        if wallet["name"] == "unencrypted-default-wallet":
+            walletID = wallet["id"]
+            break
+
+    if walletID is None:
+        raise Exception("Wallet not found: {}".format(
+            "unencrypted-default-wallet"))
+
+    walletHandle = kmd.init_wallet_handle(walletID, "")
+
+    try:
+        addresses = kmd.list_keys(walletHandle)
+        privateKeys = [
+            kmd.export_key(walletHandle, "", addr)
+            for addr in addresses
+        ]
+        kmdAccounts = [Account(sk) for sk in privateKeys]
+    finally:
+        kmd.release_wallet_handle(walletHandle)
+
+    return kmdAccounts

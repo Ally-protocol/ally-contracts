@@ -3,10 +3,24 @@ from pyteal import *
 
 class AllyValidator:
     class Vars:
+        owner_key = Bytes("owner")
         token_id_key = Bytes("token_id")
+        total_mint_amount_key = Bytes("total_mint_amt")
+        
+    def on_create(self):
+        return Seq(
+            App.globalPut(self.Vars.owner_key, Txn.sender()),
+            App.globalPut(self.Vars.total_mint_amount_key, Int(0)),
+            Approve()
+        )
         
     def on_bootstrap(self):
+        token_id = App.globalGetEx(Int(0), self.Vars.token_id_key)
         return Seq(
+            Assert(Txn.sender() == App.globalGet(self.Vars.owner_key)),
+            token_id,
+            Assert(token_id.hasValue() == Int(0)),
+            
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields({
                 TxnField.type_enum: TxnType.AssetConfig,
@@ -14,7 +28,7 @@ class AllyValidator:
                 TxnField.config_asset_decimals: Int(6),
                 TxnField.config_asset_unit_name: Bytes("wALGO"),
                 TxnField.config_asset_name: Bytes("wALGO"),
-                TxnField.config_asset_url: Bytes("https://www.maxos.studio"),
+                TxnField.config_asset_url: Bytes("https://maxos.studio"),
                 TxnField.config_asset_manager: Global.zero_address(),
                 TxnField.config_asset_clawback: Global.zero_address(),
                 TxnField.config_asset_reserve: Global.zero_address(),
@@ -26,8 +40,40 @@ class AllyValidator:
         )
         
     def on_mint(self):
+        mint_amount = ScratchVar(TealType.uint64)
         return Seq(
-            # TODO: 
+            Assert(
+                And(
+                    Txn.assets[0] == App.globalGet(self.Vars.token_id_key),
+                    Global.group_size() >= Int(2),
+                )
+            ),
+            Assert(Gtxn[0].type_enum() == TxnType.Payment),
+            
+            mint_amount.store(
+                If(
+                    App.globalGet(self.Vars.total_mint_amount_key) == Int(0),
+                    Gtxn[0].amount(),
+                    WideRatio(
+                        [Balance(Global.current_application_address()), Gtxn[0].amount()], 
+                        [App.globalGet(self.Vars.total_mint_amount_key)]
+                    )
+                )
+            ),
+            
+            InnerTxnBuilder.Begin(),
+            InnerTxnBuilder.SetFields({
+                TxnField.type_enum: TxnType.AssetTransfer,
+                TxnField.xfer_asset: Txn.assets[0],
+                TxnField.asset_receiver: Txn.sender(),
+                TxnField.asset_amount: mint_amount.load(),
+            }),
+            InnerTxnBuilder.Submit(),
+            
+            App.globalPut(
+                self.Vars.total_mint_amount_key,
+                App.globalGet(self.Vars.total_mint_amount_key) + mint_amount.load()
+            ),
             Approve()
         )
         
@@ -54,9 +100,9 @@ class AllyValidator:
         
     def approval_program(self):
         program = Cond(
+            [Txn.application_id() == Int(0), self.on_create()],
             [
                 Or(
-                    Txn.application_id() == Int(0),
                     Txn.on_completion() == OnComplete.OptIn,
                     Txn.on_completion() == OnComplete.DeleteApplication
                 ),
