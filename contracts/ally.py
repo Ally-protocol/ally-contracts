@@ -1,7 +1,7 @@
 from pyteal import *
 
 
-class AllyValidator:
+class AllyPool:
     class Vars:
         owner_key = Bytes("owner")
         token_id_key = Bytes("token_id")
@@ -124,7 +124,7 @@ class AllyValidator:
 
 
 if __name__ == '__main__':
-    validator = AllyValidator()
+    validator = AllyPool()
     with open('ally_validator_approval.teal', 'w') as f:
         compiled = compileTeal(validator.approval_program(),
                                mode=Mode.Application, version=5)
