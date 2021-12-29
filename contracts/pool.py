@@ -8,6 +8,7 @@ pool_token_key = Bytes("p")
 mint_price_key = Bytes("mp")
 redeem_price_key = Bytes("rp")
 commited_algos_key = Bytes("co")
+allow_redeem_key = Bytes("ar")
 
 total_supply = 0xFFFFFFFFFFFFFFFF
 
@@ -77,6 +78,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
     on_create = Seq(
         App.globalPut(mint_price_key, Int(1_000_000_000)),
         App.globalPut(redeem_price_key, Int(1_000_000_000)),
+        App.globalPut(allow_redeem_key, Int(1)),
         App.globalPut(commited_algos_key, Int(0)),
         Approve()
     )
@@ -126,6 +128,12 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
     on_set_redeem_price = Seq(
         Assert(Txn.sender() == governor),
         App.globalPut(redeem_price_key, Btoi(new_redeem_price)),
+        Approve()
+    )
+    
+    on_toggle_redeem = Seq(
+        Assert(Txn.sender() == governor),
+        App.globalPut(allow_redeem_key, Not(App.globalGet(allow_redeem_key))),
         Approve()
     )
 
@@ -180,6 +188,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
     pool_bal = AssetHolding.balance(
         Global.current_application_address(), pool_token)
     on_redeem = Seq(
+        Assert(App.globalGet(allow_redeem_key)),
         pool_bal,
         # TODO: uncomment when done testing on dev
         # Assert(after_lock_stop),
@@ -205,6 +214,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
         [on_call_method == Bytes("set_governor"), on_set_governor],
         [on_call_method == Bytes("set_mint_price"), on_set_mint_price],
         [on_call_method == Bytes("set_redeem_price"), on_set_redeem_price],
+        [on_call_method == Bytes("toggle_redeem"), on_toggle_redeem],
         [on_call_method == Bytes("commit"), on_commit],
         # Users
         [on_call_method == Bytes("mint"), on_mint],
