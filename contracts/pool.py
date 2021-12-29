@@ -14,14 +14,9 @@ total_supply = 0xFFFFFFFFFFFFFFFF
 
 
 # Takes unix timestamp for locked windows
-def approval(lock_start: int = 0, lock_stop: int = 0):
-    assert lock_start < lock_stop
-
+def approval():
     pool_token = App.globalGet(pool_token_key)
     governor = App.globalGet(gov_key)
-
-    before_lock_start = And(Global.latest_timestamp() < Int(lock_start))
-    after_lock_stop = And(Global.latest_timestamp() > Int(lock_stop))
 
     @Subroutine(TealType.uint64)
     def mint_tokens(algos_in: TealType.uint64):
@@ -139,7 +134,6 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
 
     algos_to_commit = Btoi(Txn.application_args[1])
     on_commit = Seq(
-        # TODO: assert we're in the voting window
         Assert(
             And(
                 Global.group_size() == Int(1),
@@ -168,8 +162,6 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
     on_mint = Seq(
         # Init MaybeValues
         pool_bal,
-        # TODO: uncomment when done testing on dev
-        # Assert(before_lock_start),
         Assert(
             And(
                 Global.group_size() == Int(2),  # App call, Payment to mint
@@ -190,8 +182,6 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
     on_redeem = Seq(
         Assert(App.globalGet(allow_redeem_key)),
         pool_bal,
-        # TODO: uncomment when done testing on dev
-        # Assert(after_lock_stop),
         Assert(
             And(
                 Global.group_size() == Int(2),
