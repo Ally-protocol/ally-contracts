@@ -132,28 +132,28 @@ def approval():
         Approve()
     )
 
-    algos_to_commit = Btoi(Txn.application_args[1])
-    on_commit = Seq(
+    on_join = Seq(
         Assert(
-            And(
-                Global.group_size() == Int(1),
-                Gtxn[0].type_enum() == TxnType.ApplicationCall,
-                Gtxn[0].sender() == governor,
-            )
+            Txn.type_enum() == TxnType.ApplicationCall,
+            Txn.sender() == governor,
         ),
         InnerTxnBuilder.Begin(),
-        InnerTxnBuilder.SetFields(
-            {
-                TxnField.type_enum: TxnType.Payment,
-                TxnField.receiver: Txn.accounts[
-                    1
-                ],  # TODO: this should be hardcoded not passed in
-                TxnField.amount: algos_to_commit,
-                TxnField.fee: Int(0),
-            }
-        ),
+        InnerTxnBuilder.SetFields({
+            TxnField.type_enum: TxnType.Payment,
+            TxnField.receiver: Txn.accounts[1],  # address of goverance
+            TxnField.amount: Int(0),
+            TxnField.note: Txn.application_args[
+                1
+            ],  # expecting a valid note as the 2nd element in app args array
+            TxnField.fee: Int(0),
+        }),
         InnerTxnBuilder.Submit(),
-        App.globalPut(commited_algos_key, App.globalGet(commited_algos_key) + algos_to_commit),
+        Approve(),
+    )
+    
+    algos_to_commit = Btoi(Txn.application_args[1])
+    on_vote = Seq(
+        # TODO: 
         Approve(),
     )
 
@@ -205,7 +205,8 @@ def approval():
         [on_call_method == Bytes("set_mint_price"), on_set_mint_price],
         [on_call_method == Bytes("set_redeem_price"), on_set_redeem_price],
         [on_call_method == Bytes("toggle_redeem"), on_toggle_redeem],
-        [on_call_method == Bytes("commit"), on_commit],
+        [on_call_method == Bytes("join"), on_join],
+        [on_call_method == Bytes("vote"), on_vote],
         # Users
         [on_call_method == Bytes("mint"), on_mint],
         [on_call_method == Bytes("redeem"), on_redeem],
