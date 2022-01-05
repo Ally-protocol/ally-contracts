@@ -134,8 +134,10 @@ def approval():
 
     on_join = Seq(
         Assert(
-            Txn.type_enum() == TxnType.ApplicationCall,
-            Txn.sender() == governor,
+            And(
+                Txn.type_enum() == TxnType.ApplicationCall,
+                Txn.sender() == governor,
+            )
         ),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
@@ -232,19 +234,19 @@ def clear():
     return Return(Int(1))
 
 
-def get_approval_src(**kwargs):
-    return compileTeal(approval(**kwargs), mode=Mode.Application, version=5)
+def get_approval_src():
+    return compileTeal(approval(), mode=Mode.Application, version=5)
 
 
-def get_clear_src(**kwargs):
-    return compileTeal(clear(**kwargs), mode=Mode.Application, version=5)
+def get_clear_src():
+    return compileTeal(clear(), mode=Mode.Application, version=5)
 
 
 if __name__ == "__main__":
     path = os.path.dirname(os.path.abspath(__file__))
 
     with open(os.path.join(path, "approval.teal"), "w") as f:
-        f.write(get_approval_src(lock_start=1, lock_stop=10))
+        f.write(get_approval_src())
 
     with open(os.path.join(path, "clear.teal"), "w") as f:
         f.write(get_clear_src())

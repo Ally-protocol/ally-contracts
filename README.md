@@ -1,2 +1,7 @@
-# ally
-Ally for Algo smart contracts
+# Ally for Algorand Governance
+
+- Deploy
+
+```
+python deploy.py
+```
