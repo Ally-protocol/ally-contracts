@@ -6,7 +6,6 @@ from base64 import b64decode
 from algosdk.future import transaction
 from algosdk.v2client.algod import AlgodClient
 from algosdk.logic import get_application_address
-from pyteal import compileTeal, Mode, Expr
 
 from contracts.pool import get_approval_src, get_clear_src
 from utils import wait_for_transaction, get_algod_client
