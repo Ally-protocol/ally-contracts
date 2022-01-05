@@ -13,8 +13,7 @@ from utils import wait_for_transaction, get_algod_client
 from account import Account
 
 
-def fullyCompileContract(client: AlgodClient, contract: Expr) -> bytes:
-    teal = compileTeal(contract, mode=Mode.Application, version=5)
+def fullyCompileContract(client: AlgodClient, teal: str) -> bytes:
     response = client.compile(teal)
     return b64decode(response["result"])
 
