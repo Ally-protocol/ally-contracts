@@ -63,8 +63,7 @@ def approval():
                 {
                     TxnField.type_enum: TxnType.Payment,
                     TxnField.amount: amt,
-                    TxnField.receiver: receiver,
-                    TxnField.fee: Int(0),
+                    TxnField.receiver: receiver
                 }
             ),
             InnerTxnBuilder.Submit(),
@@ -75,6 +74,7 @@ def approval():
         App.globalPut(redeem_price_key, Int(1_000_000_000)),
         App.globalPut(allow_redeem_key, Int(1)),
         App.globalPut(commited_algos_key, Int(0)),
+        App.globalPut(gov_key, Txn.sender()),
         Approve()
     )
 
@@ -97,7 +97,6 @@ def approval():
             TxnField.config_asset_reserve: Global.zero_address(),
             TxnField.config_asset_clawback: Global.zero_address(),
             TxnField.config_asset_freeze: Global.zero_address(),
-            TxnField.fee: Int(0),
         }),
         InnerTxnBuilder.Submit(),
         # Write it to global state
@@ -147,7 +146,6 @@ def approval():
             TxnField.note: Txn.application_args[
                 1
             ],  # expecting a valid note as the 2nd element in app args array
-            TxnField.fee: Int(0),
         }),
         InnerTxnBuilder.Submit(),
         Approve(),
