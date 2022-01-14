@@ -1,24 +1,10 @@
 import os
 
 import dotenv
-from algosdk.v2client.algod import AlgodClient
-from algosdk.future import transaction
 
-from account import Account
-from utils import wait_for_transaction, get_algod_client
-
-
-def destroy_pool(client: AlgodClient, sender: Account, app_id: int):
-    txn = transaction.ApplicationDeleteTxn(
-        sender=sender.get_address(),
-        sp=client.suggested_params(),
-        index=app_id
-    )
-    signed_txn = txn.sign(sender.get_private_key())
-
-    client.send_transaction(signed_txn)
-
-    wait_for_transaction(client, signed_txn.get_txid())
+from ally.account import Account
+from ally.operations import destroy_pool
+from ally.utils import get_algod_client
 
 
 if __name__ == '__main__':

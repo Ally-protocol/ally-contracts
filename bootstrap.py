@@ -1,25 +1,10 @@
 import os
 
 import dotenv
-from algosdk.v2client.algod import AlgodClient
-from algosdk.future import transaction
 
-from account import Account
-from utils import get_algod_client, get_app_global_state, wait_for_transaction
-
-
-def bootstrap_pool(client: AlgodClient, sender: Account, app_id: int):
-    txn = transaction.ApplicationCallTxn(
-        sender=sender.get_address(),
-        sp=client.suggested_params(),
-        index=app_id,
-        on_complete=transaction.OnComplete.NoOpOC,
-        app_args=[b"bootstrap"],
-    )
-    signed_txn = txn.sign(sender.get_private_key())
-    client.send_transaction(signed_txn)
-    
-    wait_for_transaction(client, signed_txn.get_txid())
+from ally.account import Account
+from ally.operations import bootstrap_pool
+from ally.utils import get_algod_client, get_app_global_state
     
 
 if __name__ == '__main__':
@@ -33,7 +18,7 @@ if __name__ == '__main__':
 
     app_id = int(os.environ.get("APP_ID"))
     
-    # bootstrap_pool(client, creator, app_id)
+    bootstrap_pool(client, creator, app_id)
     
     state = get_app_global_state(client, app_id)
     

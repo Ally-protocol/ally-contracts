@@ -6,7 +6,7 @@ from algosdk.v2client.algod import AlgodClient
 from algosdk.kmd import KMDClient
 from pyteal import compileTeal, Expr, Mode
 
-from account import Account
+from .account import Account
 
 
 def get_algod_client(url, token) -> AlgodClient:
