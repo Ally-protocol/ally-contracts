@@ -2,6 +2,7 @@ from base64 import b64decode
 from typing import List, Tuple
 from algosdk.v2client.algod import AlgodClient
 from algosdk.future import transaction
+from algosdk.logic import get_application_address
 
 from .utils import wait_for_transaction
 from .account import Account
@@ -91,3 +92,52 @@ def destroy_pool(client: AlgodClient, sender: Account, app_id: int):
     client.send_transaction(signed_txn)
 
     wait_for_transaction(client, signed_txn.get_txid())
+    
+    
+def mint_walgo(client: AlgodClient, sender: Account, app_id: int, amount: int):
+    call_txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=[b"mint"]
+    )
+    payment_txn = transaction.PaymentTxn(
+        sender=sender.get_address(),
+        sp=client.suggested_params(),
+        receiver=get_application_address(app_id),
+        amt=amount
+    )
+    
+    transaction.assign_group_id([call_txn, payment_txn])
+    
+    signed_call_txn = call_txn.sign(sender.get_private_key())
+    signed_payment_txn = payment_txn.sign(sender.get_private_key())
+    
+    tx_id = client.send_transactions([signed_call_txn, signed_payment_txn])
+    
+    wait_for_transaction(client, tx_id)
+    
+    
+def redeem_walgo(client: AlgodClient, sender: Account, app_id: int, asset_id: int, amount: int):
+    call_txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=[b"redeem"]
+    )
+    axfer_txn = transaction.AssetTransferTxn(
+        sender=sender.get_address(),
+        sp=client.suggested_params(),
+        receiver=get_application_address(app_id),
+        amt=amount,
+        index=asset_id
+    )
+    
+    transaction.assign_group_id([call_txn, axfer_txn])
+    
+    signed_call_txn = call_txn.sign(sender.get_private_key())
+    signed_axfer_txn = axfer_txn.sign(sender.get_private_key())
+    
+    tx_id = client.send_transactions([signed_call_txn, signed_axfer_txn])
+    
+    wait_for_transaction(client, tx_id)
