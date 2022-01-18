@@ -21,4 +21,4 @@ if __name__ == '__main__':
     
     mint_walgo(client, minter, app_id, walgo_id, amount)
     
-    print(get_balances(client, minter.get_address())[walgo_id])
+    print(get_balances(client, minter.get_address()))
