@@ -49,7 +49,6 @@ def approval():
                     TxnField.xfer_asset: aid,
                     TxnField.asset_amount: amt,
                     TxnField.asset_receiver: reciever,
-                    TxnField.fee: Int(0),
                 }
             ),
             InnerTxnBuilder.Submit(),
@@ -169,11 +168,11 @@ def approval():
                 Gtxn[0].assets[0] == pool_token,
                 Gtxn[1].type_enum() == TxnType.Payment,
                 Gtxn[1].receiver() == Global.current_application_address(),
-                Gtxn[1].amount() > Int(0),
+                Gtxn[1].amount() > Int(1_000),
                 Gtxn[1].sender() == Gtxn[0].sender(),
             )
         ),
-        axfer(Gtxn[0].sender(), pool_token, mint_tokens(Gtxn[1].amount())),
+        axfer(Gtxn[0].sender(), pool_token, mint_tokens(Gtxn[1].amount() - Int(1_000))),
         Approve(),
     )
 

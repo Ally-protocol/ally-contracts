@@ -4,7 +4,7 @@ from algosdk.v2client.algod import AlgodClient
 from algosdk.future import transaction
 from algosdk.logic import get_application_address
 
-from .utils import wait_for_transaction
+from .utils import get_balances, is_opted_in_asset, wait_for_transaction
 from .account import Account
 from .contracts.pool import get_approval_src, get_clear_src
 
@@ -46,6 +46,17 @@ def create_pool(client: AlgodClient, creator: Account):
 
 
 def bootstrap_pool(client: AlgodClient, sender: Account, app_id: int):
+    if get_balances(client, get_application_address(app_id))[0] < 202_000:
+        pay_txn = transaction.PaymentTxn(
+            sender=sender.get_address(),
+            sp=client.suggested_params(),
+            receiver=get_application_address(app_id),
+            amt=202_000
+        )
+        signed_pay_txn = pay_txn.sign(sender.get_private_key())
+        client.send_transaction(signed_pay_txn)
+        wait_for_transaction(client, pay_txn.get_txid())
+        
     txn = transaction.ApplicationCallTxn(
         sender=sender.get_address(),
         sp=client.suggested_params(),
@@ -94,18 +105,31 @@ def destroy_pool(client: AlgodClient, sender: Account, app_id: int):
     wait_for_transaction(client, signed_txn.get_txid())
     
     
-def mint_walgo(client: AlgodClient, sender: Account, app_id: int, amount: int):
+def mint_walgo(client: AlgodClient, sender: Account, app_id: int, asset_id: int, amount: int):
+    if not is_opted_in_asset(client, asset_id, sender.get_address()):
+        txn = transaction.AssetOptInTxn(
+            sender=sender.get_address(),
+            sp=client.suggested_params(),
+            index=asset_id
+        )
+        signed_txn = txn.sign(sender.get_private_key())
+        client.send_transaction(signed_txn)
+        
+        wait_for_transaction(client, txn.get_txid())
+        
     call_txn = transaction.ApplicationCallTxn(
         sender=sender.get_address(),
         sp=client.suggested_params(),
         index=app_id,
-        app_args=[b"mint"]
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"mint"],
+        foreign_assets=[asset_id]
     )
     payment_txn = transaction.PaymentTxn(
         sender=sender.get_address(),
         sp=client.suggested_params(),
         receiver=get_application_address(app_id),
-        amt=amount
+        amt=amount + 1_000
     )
     
     transaction.assign_group_id([call_txn, payment_txn])

@@ -156,3 +156,11 @@ def get_genesis_accounts(url: str, token: str) -> List[Account]:
         kmd.release_wallet_handle(walletHandle)
 
     return kmdAccounts
+
+
+def is_opted_in_asset(client: AlgodClient, asset_id: int, addr: str):
+    account_info = client.account_info(addr)  
+    for a in account_info.get('assets', []):
+        if a['asset-id'] == asset_id:
+            return True
+    return False

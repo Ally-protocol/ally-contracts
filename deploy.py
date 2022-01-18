@@ -3,8 +3,8 @@ import dotenv
 
 from algosdk.logic import get_application_address
 
-from ally.operations import create_pool
-from ally.utils import get_algod_client
+from ally.operations import bootstrap_pool, create_pool
+from ally.utils import get_algod_client, get_app_global_state
 from ally.account import Account
 
 
@@ -21,3 +21,9 @@ if __name__ == '__main__':
 
     print(f"App ID: {app_id}")
     print(f"App address: {get_application_address(app_id)}")
+    
+    bootstrap_pool(client, creator, app_id)
+    
+    state = get_app_global_state(client, app_id)
+    
+    print("Global state: ", state)
