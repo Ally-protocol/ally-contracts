@@ -204,21 +204,19 @@ class AllyPool:
             Global.current_application_address(), pool_token)
         return Seq(
             Assert(App.globalGet(self.Vars.allow_redeem_key)),
-            pool_bal,
             Assert(
                 And(
                     Global.group_size() == Int(2),
                     Gtxn[0].type_enum() == TxnType.ApplicationCall,
                     Gtxn[0].assets[0] == pool_token,
                     Gtxn[1].type_enum() == TxnType.AssetTransfer,
-                    Gtxn[1].asset_receiver(
-                    ) == Global.current_application_address(),
+                    Gtxn[1].asset_receiver() == Global.current_application_address(),
                     Gtxn[1].xfer_asset() == pool_token,
                     Gtxn[0].sender() == Gtxn[1].sender(),
                 )
             ),
-            self.pay(Gtxn[1].sender(), self.algos_to_redeem(
-                Gtxn[1].asset_amount())),
+            pool_bal,
+            self.pay(Gtxn[1].sender(), self.algos_to_redeem(Gtxn[1].asset_amount())),
             Approve(),
         )
 
@@ -261,10 +259,6 @@ class AllyPool:
 
     def clear_program(self):
         return Approve()
-
-
-def get_clear_src():
-    return
 
 
 if __name__ == "__main__":
