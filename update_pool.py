@@ -3,15 +3,14 @@ import os
 import dotenv
 
 from ally.account import Account
-from ally.operations import destroy_pool
+from ally.operations import update_pool
 from ally.utils import get_algod_client
 
 
 if __name__ == '__main__':
     dotenv.load_dotenv(".env")
 
-    client = get_algod_client(os.environ.get(
-        "ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
+    client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
 
     governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
     governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
@@ -22,4 +21,4 @@ if __name__ == '__main__':
 
     app_id = int(os.environ.get("APP_ID"))
     
-    destroy_pool(client, governors, threshold, app_id)
+    update_pool(client, governors, threshold, app_id)

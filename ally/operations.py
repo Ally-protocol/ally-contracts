@@ -1,12 +1,15 @@
+import random
 from base64 import b64decode
 from typing import List, Tuple
 from algosdk.v2client.algod import AlgodClient
 from algosdk.future import transaction
 from algosdk.logic import get_application_address
+from algosdk import encoding
+from pyteal import compileTeal, Mode
 
 from .utils import get_balances, is_opted_in_asset, wait_for_transaction
 from .account import Account
-from .contracts.pool import get_approval_src, get_clear_src
+from .contracts.pool import AllyPool
 
 
 def fullyCompileContract(client: AlgodClient, teal: str) -> bytes:
@@ -15,21 +18,29 @@ def fullyCompileContract(client: AlgodClient, teal: str) -> bytes:
 
 
 def get_contracts(client: AlgodClient) -> Tuple[bytes, bytes]:
+    pool = AllyPool()
     approval_program = fullyCompileContract(
-        client, get_approval_src())
+        client, compileTeal(pool.approval_program(), mode=Mode.Application, version=5)
+    )
     clear_state_program = fullyCompileContract(
-        client, get_clear_src())
+        client, compileTeal(pool.clear_program(), mode=Mode.Application, version=5)
+    )
 
     return approval_program, clear_state_program
 
 
-def create_pool(client: AlgodClient, creator: Account):
+def create_pool(client: AlgodClient, governors: List[Account], multisig_threshold: int):
     approval, clear = get_contracts(client)
     global_schema = transaction.StateSchema(num_uints=32, num_byte_slices=32)
     local_schema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
+    
+    msig = transaction.Multisig(
+        1, multisig_threshold, 
+        [governor.get_address() for governor in governors]
+    )
 
     txn = transaction.ApplicationCreateTxn(
-        sender=creator.get_address(),
+        sender=msig.address(),
         sp=client.suggested_params(),
         on_complete=transaction.OnComplete.NoOpOC,
         approval_program=approval,
@@ -37,37 +48,42 @@ def create_pool(client: AlgodClient, creator: Account):
         global_schema=global_schema,
         local_schema=local_schema,
     )
-    signed_txn = txn.sign(creator.get_private_key())
-    client.send_transaction(signed_txn)
+    mtx = transaction.MultisigTransaction(txn, msig)
+    
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+    
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
 
-    response = wait_for_transaction(client, signed_txn.get_txid())
+    response = wait_for_transaction(client, tx_id)
     assert response.application_index is not None and response.application_index > 0
     return response.application_index
 
 
-def bootstrap_pool(client: AlgodClient, sender: Account, app_id: int):
-    if get_balances(client, get_application_address(app_id))[0] < 202_000:
-        pay_txn = transaction.PaymentTxn(
-            sender=sender.get_address(),
-            sp=client.suggested_params(),
-            receiver=get_application_address(app_id),
-            amt=202_000
-        )
-        signed_pay_txn = pay_txn.sign(sender.get_private_key())
-        client.send_transaction(signed_pay_txn)
-        wait_for_transaction(client, pay_txn.get_txid())
-        
+def bootstrap_pool(client: AlgodClient, governors: List[Account], multisig_threshold: int, app_id: int):
+    msig = transaction.Multisig(
+        1, multisig_threshold, 
+        [governor.get_address() for governor in governors]
+    )
+    print(f"Sender: {msig.address()}")
+
     txn = transaction.ApplicationCallTxn(
-        sender=sender.get_address(),
+        sender=msig.address(),
         sp=client.suggested_params(),
         index=app_id,
         on_complete=transaction.OnComplete.NoOpOC,
         app_args=[b"bootstrap"],
     )
-    signed_txn = txn.sign(sender.get_private_key())
-    client.send_transaction(signed_txn)
+    mtx = transaction.MultisigTransaction(txn, msig)
     
-    wait_for_transaction(client, signed_txn.get_txid())
+    signers = random.choices(governors, k=multisig_threshold)
+    for signer in signers:
+        mtx.sign(signer.get_private_key())
+    
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+    
+    wait_for_transaction(client, tx_id)
     
     
 def set_governor(client: AlgodClient, sender: Account, app_id: int, governors: List[Account], version: int, threshold: int):
@@ -92,17 +108,52 @@ def set_governor(client: AlgodClient, sender: Account, app_id: int, governors: L
     wait_for_transaction(client, signed_txn.get_txid())
     
     
-def destroy_pool(client: AlgodClient, sender: Account, app_id: int):
+def destroy_pool(client: AlgodClient, governors: List[Account], multisig_threshold: int, app_id: int):
+    msig = transaction.Multisig(
+        1, multisig_threshold, 
+        [governor.get_address() for governor in governors]
+    )
+    print(f"Sender: {msig.address()}")
+    
     txn = transaction.ApplicationDeleteTxn(
-        sender=sender.get_address(),
+        sender=msig.address(),
         sp=client.suggested_params(),
         index=app_id
     )
-    signed_txn = txn.sign(sender.get_private_key())
+    mtx = transaction.MultisigTransaction(txn, msig)
+    
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+    
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+    
+    wait_for_transaction(client, tx_id)
+    
 
-    client.send_transaction(signed_txn)
-
-    wait_for_transaction(client, signed_txn.get_txid())
+def update_pool(client: AlgodClient, governors: List[Account], multisig_threshold: int, app_id: int):
+    approval, clear = get_contracts(client)
+    msig = transaction.Multisig(
+        1, multisig_threshold, 
+        [governor.get_address() for governor in governors]
+    )
+    print(f"Sender: {msig.address()}")
+    txn = transaction.ApplicationUpdateTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        approval_program=approval,
+        clear_program=clear
+    )
+    mtx = transaction.MultisigTransaction(txn, msig)
+    
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+    
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+    
+    wait_for_transaction(client, tx_id)
     
     
 def mint_walgo(client: AlgodClient, sender: Account, app_id: int, asset_id: int, amount: int):
@@ -147,7 +198,9 @@ def redeem_walgo(client: AlgodClient, sender: Account, app_id: int, asset_id: in
         sender=sender.get_address(),
         sp=client.suggested_params(),
         index=app_id,
-        app_args=[b"redeem"]
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"redeem"],
+        foreign_assets=[asset_id]
     )
     axfer_txn = transaction.AssetTransferTxn(
         sender=sender.get_address(),
