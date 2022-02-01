@@ -27,7 +27,16 @@ When finished, the sandbox can be stopped with:
 ```
 
 Before running commands you have to create the .env file based on the .env.example
-and fill the governors, minter and funder mnemonics and also the MULTISIG_THRESHOLD (should we default this?)
+
+In order to get the MNEMONICS for 3 governors, 1 funder and 1 minter, run:
+
+```
+python local_setup.py
+```
+
+and fill the governors, minter and funder mnemonics from that command's output
+
+also the MULTISIG_THRESHOLD should be filled with a number
 
 - Deploy contract and create pool token
 
