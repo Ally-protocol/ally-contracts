@@ -1,3 +1,4 @@
+import sys
 import os
 from typing import List
 
@@ -23,5 +24,5 @@ if __name__ == '__main__':
     governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
     governors = [governor1, governor2, governor3]
 
-    set_mint_price(104_000, client, governors, app_id, version, threshold)
+    set_mint_price(sys.argv[1], client, governors, app_id, version, threshold)
     
