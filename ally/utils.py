@@ -15,6 +15,8 @@ def get_algod_client(url, token) -> AlgodClient:
     }
     return AlgodClient(token, url, headers)
 
+def get_kmd_client(url, token) -> KMDClient:
+    return KMDClient(token, url)
 
 class PendingTxnResponse:
     def __init__(self, response: Dict[str, Any]) -> None:
@@ -129,9 +131,7 @@ def get_balances(client: AlgodClient, account: str) -> Dict[int, int]:
     return balances
 
 
-def get_genesis_accounts(url: str, token: str) -> List[Account]:
-    kmd = KMDClient(token, url)
-
+def get_genesis_accounts(kmd: KMDClient) -> List[Account]:
     wallets = kmd.list_wallets()
     walletID = None
     for wallet in wallets:
