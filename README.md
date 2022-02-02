@@ -36,6 +36,9 @@ python local_setup.py
 
 and fill the governors, minter and funder mnemonics from that command's output
 
+this only works as a shortcut for the local sandbox, when using testnets or mainnet
+you need to create accounts manually on AlgoSigner.
+
 also the MULTISIG_THRESHOLD should be filled with a number
 
 - Deploy contract and create pool token
