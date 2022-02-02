@@ -247,7 +247,7 @@ def toggle_redeem(client: AlgodClient, governors: List[Account], app_id: int, ve
     wait_for_transaction(client, tx_id)
     
 
-def set_mint_price(price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
     msig = transaction.Multisig(
         1, multisig_threshold,
         [governor.get_address() for governor in governors]
@@ -257,8 +257,7 @@ def set_mint_price(price: int, client: AlgodClient, governors: List[Account], ap
         sender=msig.address(),
         sp=client.suggested_params(),
         index=app_id,
-        app_args=["toggle_redeem"],
-        app_args=["set_mint_price", price],
+        app_args=["set_mint_price", mint_price.to_bytes(8, 'big')],
         on_complete=transaction.OnComplete.NoOpOC
     )
 
