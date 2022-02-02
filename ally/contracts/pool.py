@@ -117,7 +117,7 @@ class AllyPool:
         )
 
     def on_set_mint_price(self):
-        new_mint_price = Txn.application_args[0]
+        new_mint_price = Txn.application_args[1]
         governor = App.globalGet(self.Vars.gov_key)
         return Seq(
             Assert(Txn.sender() == governor),

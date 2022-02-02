@@ -245,3 +245,31 @@ def toggle_redeem(client: AlgodClient, governors: List[Account], app_id: int, ve
     tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
 
     wait_for_transaction(client, tx_id)
+    
+
+def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+    msig = transaction.Multisig(
+        1, multisig_threshold,
+        [governor.get_address() for governor in governors]
+    )
+
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["set_mint_price", mint_price.to_bytes(8, 'big')],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
+
