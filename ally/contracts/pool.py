@@ -39,7 +39,7 @@ class AllyPool:
 
     @staticmethod
     @Subroutine(TealType.none)
-    def axfer(reciever: TealType.bytes, aid: TealType.uint64, amt: TealType.uint64):
+    def axfer(receiver: TealType.bytes, aid: TealType.uint64, amt: TealType.uint64):
         return Seq(
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
@@ -47,7 +47,7 @@ class AllyPool:
                     TxnField.type_enum: TxnType.AssetTransfer,
                     TxnField.xfer_asset: aid,
                     TxnField.asset_amount: amt,
-                    TxnField.asset_receiver: reciever,
+                    TxnField.asset_receiver: receiver,
                 }
             ),
             InnerTxnBuilder.Submit(),
