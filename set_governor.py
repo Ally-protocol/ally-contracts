@@ -16,7 +16,7 @@ if __name__ == '__main__':
         os.environ.get("ALGOD_API_KEY")
     )
 
-    creator = Account.from_mnemonic(os.environ.get("CREATOR_MNEMONIC"))
+    creator = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))
 
     app_id = int(os.environ.get("APP_ID"))
 
