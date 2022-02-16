@@ -1,3 +1,10 @@
+"""
+Purpose: assign a new governor account
+Actor: The current contract governor (admin)
+When: changing the governor
+How: `python admin/set_governor.py`
+"""
+
 import sys
 sys.path.insert(0, '')
 

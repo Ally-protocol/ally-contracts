@@ -1,3 +1,19 @@
+"""
+Purpose: provide utility functions that are common to in Algorand
+Available Functions:
+- get_algod_client
+- get_kmd_client
+- wait_for_transaction
+- fully_compile_contract
+- decode_state
+- get_app_global_state
+- get_app_local_state
+- get_app_address
+- get_balances
+- get_genesis_accounts
+- get_temporary_account
+"""
+
 from base64 import b64decode
 from typing import Dict, Union, List, Any, Optional
 

@@ -1,3 +1,22 @@
+"""
+Purpose: operations that interact with contracts/pool.py smart contract
+Available Functions:
+- create_pool
+- bootstrap_pool
+- set_governor
+- destroy_pool
+- update_pool
+- mint_walgo
+- redeem_walgo
+- toggle_redeem
+- set_mint_price
+"""
+
+# TODO: file is too long, ideally divide these function into separated files by category
+# Deploy operations
+# Admin operations
+# User operations
+
 import random
 from base64 import b64decode
 from typing import List, Tuple
