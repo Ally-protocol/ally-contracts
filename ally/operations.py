@@ -86,26 +86,31 @@ def bootstrap_pool(client: AlgodClient, governors: List[Account], multisig_thres
     wait_for_transaction(client, tx_id)
     
     
-def set_governor(client: AlgodClient, sender: Account, app_id: int, governors: List[Account], version: int, threshold: int):
+def set_governor(client: AlgodClient, sender: Account, app_id: int, governors: List[Account], version: int, multisig_threshold: int):
     msig = transaction.Multisig(
-        version, threshold, [governor.get_address() for governor in governors]
+        version, multisig_threshold, [governor.get_address() for governor in governors]
     )
 
     print('multisig address: ', msig.address())
 
     txn = transaction.ApplicationCallTxn(
-        sender=sender.get_address(),
+        sender=msig.address(),
         sp=client.suggested_params(),
         index=app_id,
         app_args=[b"set_governor"],
-        accounts=[msig.address()],
+        accounts=[sender.get_address()],
         on_complete=transaction.OnComplete.NoOpOC
     )
-    signed_txn = txn.sign(sender.get_private_key())
 
-    client.send_transaction(signed_txn)
+    mtx = transaction.MultisigTransaction(txn, msig)
 
-    wait_for_transaction(client, signed_txn.get_txid())
+    signers = random.choices(governors, k=multisig_threshold)
+    for signer in signers:
+        mtx.sign(signer.get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
     
     
 def destroy_pool(client: AlgodClient, governors: List[Account], multisig_threshold: int, app_id: int):
