@@ -1,5 +1,6 @@
-from algosdk import account, mnemonic
+# Useful methods to interact with accounts
 
+from algosdk import account, mnemonic
 
 class Account:
     """Represents a private key and address for an Algorand account"""

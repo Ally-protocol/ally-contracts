@@ -1,3 +1,10 @@
+"""
+Deploys contract/pool.py application
+Deployment retuns an app_id and walgo_id that should be copied to the .env file
+Deployment is set to be done using a multisignature account composed by 3 governors
+After that, all governor (admin) actions in the 'admin' folder must be done by the same multisignature account
+"""
+
 import sys
 sys.path.insert(0, '')
 
@@ -42,7 +49,7 @@ if __name__ == '__main__':
 
     print(f"App ID: {app_id}")
     print(f"App address: {get_application_address(app_id)}")
-    
+
     if get_balances(client, get_application_address(app_id))[0] < 202_000:
         pay_txn = transaction.PaymentTxn(
             sender=funder.get_address(),

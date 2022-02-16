@@ -1,3 +1,11 @@
+"""
+Purpose: manipulate the mint price
+Features: set & get
+Actor: The current contract governor (admin)
+When: setting the mint price 
+How: `python admin/mint_price.py --set 1_020_000`
+"""
+
 import sys
 sys.path.insert(0, '')
 

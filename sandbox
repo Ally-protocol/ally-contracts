@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+
+# Purpose: pull the sandbox repo if it's not installed
+# Allows a fast local installation of the sandbox for newcomers
+
 set -e
 
 PARENT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )

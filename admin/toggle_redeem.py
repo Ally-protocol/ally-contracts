@@ -1,3 +1,10 @@
+"""
+Purpose: enable/disable wALGO token redemption
+Actor: the current contract governor (admin)
+When: the redeem period starts or ends
+How: `python admin/toggle_redeem.py`
+"""
+
 import sys
 sys.path.insert(0, '')
 

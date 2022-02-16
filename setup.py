@@ -1,3 +1,10 @@
+"""
+Purpose: creates 5 accounts for: Governors, Minter and Funder.
+Mnemonics returned by this file should be copied to the .env file
+These only work for the local sandbox.
+Testnet accounts should be created manually in AlgoSigner or MyAlgoWallet.
+"""
+
 import os
 import dotenv
 
