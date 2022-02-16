@@ -16,7 +16,7 @@ if __name__ == '__main__':
         os.environ.get("ALGOD_API_KEY")
     )
 
-    creator = Account.from_mnemonic(os.environ.get("CREATOR_MNEMONIC"))
+    creator = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))
 
     app_id = int(os.environ.get("APP_ID"))
 
@@ -25,6 +25,6 @@ if __name__ == '__main__':
     governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
 
     version = 1
-    threshold = 2
+    threshold = 1
     
     set_governor(client, creator, app_id, [governor1, governor2, governor3], version, threshold)
