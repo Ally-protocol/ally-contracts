@@ -9,28 +9,17 @@ from pyteal import compileTeal, Mode
 
 from .utils import get_balances, is_opted_in_asset, wait_for_transaction
 from .account import Account
-from .contracts.pool import AllyPool
-
-
-def fullyCompileContract(client: AlgodClient, teal: str) -> bytes:
-    response = client.compile(teal)
-    return b64decode(response["result"])
-
-
-def get_contracts(client: AlgodClient) -> Tuple[bytes, bytes]:
-    pool = AllyPool()
-    approval_program = fullyCompileContract(
-        client, compileTeal(pool.approval_program(), mode=Mode.Application, version=5)
-    )
-    clear_state_program = fullyCompileContract(
-        client, compileTeal(pool.clear_program(), mode=Mode.Application, version=5)
-    )
-
-    return approval_program, clear_state_program
-
+from .contracts.pool import get_approval_src, get_clear_src
 
 def create_pool(client: AlgodClient, governors: List[Account], multisig_threshold: int):
-    approval, clear = get_contracts(client)
+    # Read in approval teal source && compile
+    app_result = client.compile(get_approval_src(lock_start=100, lock_stop=110))
+    app_bytes = b64decode(app_result["result"])
+
+    # Read in clear teal source && compile
+    clear_result = client.compile(get_clear_src())
+    clear_bytes = b64decode(clear_result["result"])
+
     global_schema = transaction.StateSchema(num_uints=32, num_byte_slices=32)
     local_schema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
     
@@ -43,8 +32,8 @@ def create_pool(client: AlgodClient, governors: List[Account], multisig_threshol
         sender=msig.address(),
         sp=client.suggested_params(),
         on_complete=transaction.OnComplete.NoOpOC,
-        approval_program=approval,
-        clear_program=clear,
+        approval_program=app_bytes,
+        clear_program=clear_bytes,
         global_schema=global_schema,
         local_schema=local_schema,
     )
