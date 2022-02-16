@@ -44,7 +44,7 @@ also the MULTISIG_THRESHOLD should be filled with a number equal or less than th
 - Deploy contract and create pool token
 
 ```
-python deploy.py
+python deploy/deploy.py
 ```
 
 - The deployment returns an APP_ID that you have to insert in the .env file to interact with the contract
