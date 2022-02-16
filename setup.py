@@ -1,8 +1,7 @@
 import os
 import dotenv
 
-from ally.utils import get_algod_client, get_kmd_client, get_balances
-from testing.resources import get_temporary_account
+from ally.utils import get_algod_client, get_kmd_client, get_balances, get_temporary_account
 
 if __name__ == '__main__':
     dotenv.load_dotenv(".env")

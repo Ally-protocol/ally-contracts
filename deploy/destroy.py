@@ -1,5 +1,7 @@
-import os
+import sys
+sys.path.insert(0, '')
 
+import os
 import dotenv
 
 from ally.account import Account

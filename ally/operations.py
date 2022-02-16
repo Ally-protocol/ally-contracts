@@ -126,7 +126,15 @@ def destroy_pool(client: AlgodClient, governors: List[Account], multisig_thresho
     
 
 def update_pool(client: AlgodClient, governors: List[Account], multisig_threshold: int, app_id: int):
-    approval, clear = get_contracts(client)
+    
+    # Read in approval teal source && compile
+    app_result = client.compile(get_approval_src(lock_start=100, lock_stop=110))
+    app_bytes = b64decode(app_result["result"])
+
+    # Read in clear teal source && compile
+    clear_result = client.compile(get_clear_src())
+    clear_bytes = b64decode(clear_result["result"])
+    
     msig = transaction.Multisig(
         1, multisig_threshold, 
         [governor.get_address() for governor in governors]
@@ -136,8 +144,8 @@ def update_pool(client: AlgodClient, governors: List[Account], multisig_threshol
         sender=msig.address(),
         sp=client.suggested_params(),
         index=app_id,
-        approval_program=approval,
-        clear_program=clear
+        approval_program=app_bytes,
+        clear_program=clear_bytes
     )
     mtx = transaction.MultisigTransaction(txn, msig)
     

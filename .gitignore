@@ -3,3 +3,4 @@ venv/
 __pycache__/
 *.teal
 _sandbox
+try.py

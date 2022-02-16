@@ -1,11 +1,16 @@
-import os
+import sys
+sys.path.insert(0, '')
 
+import os
 import dotenv
 
 from ally.account import Account
 from ally.operations import redeem_walgo
 from ally.utils import get_algod_client, get_balances
-    
+
+# TODO - transform this file into an assertion test follwing utils_test.py
+# Include tests for admin/redeem_price actions
+# Include tests for admin/toggle_redeem actions
 
 if __name__ == '__main__':
     dotenv.load_dotenv(".env")

@@ -1,7 +1,10 @@
-import os
-from typing import List
+import sys
+sys.path.insert(0, '')
 
+import os
 import dotenv
+
+from typing import List
 
 from ally.account import Account
 from ally.operations import set_governor

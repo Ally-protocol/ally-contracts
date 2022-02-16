@@ -2,7 +2,7 @@
 
 - Install Docker and Docker-Compose.
 
-- Setup Environment
+- Environment setup
 
 ```
 python3 -m venv venv
@@ -31,7 +31,7 @@ Before running commands you have to create the .env file based on the .env.examp
 In order to get the MNEMONICS for 3 governors, 1 funder and 1 minter, run:
 
 ```
-python local_setup.py
+python setup.py
 ```
 
 and fill the governors, minter and funder mnemonics from that command's output
@@ -39,7 +39,7 @@ and fill the governors, minter and funder mnemonics from that command's output
 this only works as a shortcut for the local sandbox, when using testnets or mainnet
 you need to create accounts manually on AlgoSigner.
 
-also the MULTISIG_THRESHOLD should be filled with a number
+also the MULTISIG_THRESHOLD should be filled with a number equal or less than the amount of governors - currently 3
 
 - Deploy contract and create pool token
 
@@ -48,17 +48,16 @@ python deploy.py
 ```
 
 - The deployment returns an APP_ID that you have to insert in the .env file to interact with the contract
-using the redeem_walgo.py, set_governor.py, update_pool.py, mint_walgo.py scripts 
+- In the deployment result look for the 'pt' (pool token) value and assign it to WALGO_ID in the .env
 
-
-- Destroy contract
-
+- Run tests
 ```
-python destroy.py
+pytest
 ```
 
-- Set governor 
-
+- Governor Actions (or admin actions)
 ```
-python set_governor.py
+python admin/mint_price --get | --set
+python admin/set_governor
+python admin/toggle_redeem
 ```
