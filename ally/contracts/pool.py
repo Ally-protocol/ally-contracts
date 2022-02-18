@@ -169,9 +169,30 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
         )
 
     def vote():
-        algos_to_commit = Btoi(Txn.application_args[1])
+        app_call = Gtxn[0]
+        well_formed_vote = And(
+            Global.group_size() == Int(1),
+            app_call.type_enum() == TxnType.ApplicationCall,
+            app_call.sender() == governor,
+        )
         return Seq(
-            # TODO:
+            # TODO: uncomment when done testing on dev
+            # Assert(!before_lock_start),
+            # Assert(!after_lock_stop),
+            Assert(well_formed_vote),
+            InnerTxnBuilder.Begin(),
+            InnerTxnBuilder.SetFields(
+                {
+                    TxnField.type_enum: TxnType.Payment,
+                    TxnField.receiver: Txn.accounts[1],
+                    TxnField.amount: Int(0),
+                    TxnField.note: Txn.application_args[
+                        1
+                    ],  # expecting a valid note as the 2nd element in app args array
+                    TxnField.fee: Int(0),
+                }
+            ),
+            InnerTxnBuilder.Submit(),
             Approve(),
         )
 

@@ -35,6 +35,6 @@ if __name__ == '__main__':
     governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
 
     version = 1
-    threshold = 1
+    threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
     
     set_governor(client, creator, app_id, [governor1, governor2, governor3], version, threshold)
