@@ -12,7 +12,10 @@ Available Functions:
 - get_balances
 - get_genesis_accounts
 - get_temporary_account
+- get_governors
 """
+import os
+import dotenv
 
 from base64 import b64decode
 from typing import Dict, Union, List, Any, Optional
@@ -221,3 +224,12 @@ def get_temporary_account(client: AlgodClient, kmd: KMDClient) -> Account:
         wait_for_transaction(client, signedTxns[0].get_txid())
 
     return accountList.pop()
+
+def get_governors():
+    dotenv.load_dotenv('.env')
+
+    governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
+    governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
+    governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
+
+    return [governor1, governor2, governor3]

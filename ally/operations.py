@@ -10,6 +10,7 @@ Available Functions:
 - redeem_walgo
 - toggle_redeem
 - set_mint_price
+- vote
 """
 
 # TODO: file is too long, ideally divide these function into separated files by category
@@ -18,6 +19,7 @@ Available Functions:
 # User operations
 
 import random
+import json
 from base64 import b64decode
 from typing import List, Tuple
 from algosdk.v2client.algod import AlgodClient
@@ -112,14 +114,30 @@ def set_governor(client: AlgodClient, sender: Account, app_id: int, governors: L
 
     mtx = transaction.MultisigTransaction(txn, msig)
 
-    signers = random.choices(governors, k=multisig_threshold)
-    for signer in signers:
-        mtx.sign(signer.get_private_key())
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
 
     tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
 
     wait_for_transaction(client, tx_id)
     
+def set_multisig_governor(client: AlgodClient, sender: Account, app_id: int, msig: transaction.Multisig):
+    print('sender address: ', sender.get_address())
+
+    txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=[b"set_governor"],
+        accounts=[msig.address()],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    signed_call_txn = txn.sign(sender.get_private_key())
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(signed_call_txn))
+
+    wait_for_transaction(client, tx_id)
     
 def destroy_pool(client: AlgodClient, governors: List[Account], multisig_threshold: int, app_id: int):
     msig = transaction.Multisig(
@@ -294,3 +312,83 @@ def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account
 
     wait_for_transaction(client, tx_id)
 
+def set_redeem_price(redeem_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+    msig = transaction.Multisig(
+        1, multisig_threshold,
+        [governor.get_address() for governor in governors]
+    )
+
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["set_redeem_price", redeem_price.to_bytes(8, 'big')],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
+
+
+def vote(client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int):
+    msig = transaction.Multisig(
+        1, multisig_threshold,
+        [governor.get_address() for governor in governors]
+    )
+
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["vote", 'af/gov1:j[5: "a"]'],
+        accounts=["57QZ4S7YHTWPRAM3DQ2MLNSVLAQB7DTK4D7SUNRIEFMRGOU7DMYFGF55BY"],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
+
+def commit(commit_amount: int, client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int):
+    msig = transaction.Multisig(
+        1, multisig_threshold,
+        [governor.get_address() for governor in governors]
+    )
+
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["vote", "af/gov1-" + json.dumps({"com": commit_amount})],
+        accounts=["57QZ4S7YHTWPRAM3DQ2MLNSVLAQB7DTK4D7SUNRIEFMRGOU7DMYFGF55BY"],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
