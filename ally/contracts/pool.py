@@ -9,7 +9,7 @@ governor_key = Bytes("gv")
 pool_token_key = Bytes("pt")
 mint_price_key = Bytes("mp")
 redeem_price_key = Bytes("rp")
-commited_algos_key = Bytes("co")
+committed_algos_key = Bytes("co")
 allow_redeem_key = Bytes("ar")
 
 action_governor = Bytes("set_governor")
@@ -155,7 +155,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
             app_call.sender() == governor,
         )
 
-        commited_algos = App.globalGet(commited_algos_key) + Btoi(Txn.application_args[2])
+        committed_algos_key = App.globalGet(committed_algos_key) + Btoi(Txn.application_args[2])
         
         return Seq(
             # TODO: uncomment when done testing on dev
@@ -173,7 +173,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
                 }
             ),
             InnerTxnBuilder.Submit(),
-            App.globalPut(commited_algos_key, commited_algos),
+            App.globalPut(committed_algos_key, committed_algos),
             Approve(),
         )
 
@@ -268,7 +268,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
         App.globalPut(mint_price_key, Int(ONE_ALGO_IN_MICRO)),
         App.globalPut(redeem_price_key, Int(ONE_ALGO_IN_MICRO)),
         App.globalPut(allow_redeem_key, Int(1)),
-        App.globalPut(commited_algos_key, Int(0)),
+        App.globalPut(committed_algos_key, Int(0)),
         App.globalPut(governor_key, Txn.sender()),
         Approve()
     )
