@@ -22,6 +22,8 @@ if __name__ == '__main__':
     app_id = int(os.environ.get("APP_ID"))
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
+
+    governance = Account.from_mnemonic(os.environ.get("GOVERNANCE_ADDRESS"))
     
     governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
     governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
@@ -29,5 +31,5 @@ if __name__ == '__main__':
     governors = [governor1, governor2, governor3]
     commit_amount = 1_000_000
 
-    commit(commit_amount, client, governors, app_id, threshold)
+    commit(commit_amount, client, governors, app_id, threshold, governance)
     

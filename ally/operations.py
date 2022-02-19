@@ -339,7 +339,7 @@ def set_redeem_price(redeem_price: int, client: AlgodClient, governors: List[Acc
     wait_for_transaction(client, tx_id)
 
 
-def vote(client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int):
+def vote(client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int, governance: str):
     msig = transaction.Multisig(
         1, multisig_threshold,
         [governor.get_address() for governor in governors]
@@ -350,7 +350,7 @@ def vote(client: AlgodClient, governors: List[Account], app_id: int, multisig_th
         sp=client.suggested_params(),
         index=app_id,
         app_args=["vote", 'af/gov1:j[5: "a"]'],
-        accounts=["57QZ4S7YHTWPRAM3DQ2MLNSVLAQB7DTK4D7SUNRIEFMRGOU7DMYFGF55BY"],
+        accounts=[governance],
         on_complete=transaction.OnComplete.NoOpOC
     )
 
@@ -366,7 +366,7 @@ def vote(client: AlgodClient, governors: List[Account], app_id: int, multisig_th
 
     wait_for_transaction(client, tx_id)
 
-def commit(commit_amount: int, client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int):
+def commit(commit_amount: int, client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int, governance: str):):
     msig = transaction.Multisig(
         1, multisig_threshold,
         [governor.get_address() for governor in governors]
@@ -377,7 +377,7 @@ def commit(commit_amount: int, client: AlgodClient, governors: List[Account], ap
         sp=client.suggested_params(),
         index=app_id,
         app_args=["vote", "af/gov1-" + json.dumps({"com": commit_amount})],
-        accounts=["57QZ4S7YHTWPRAM3DQ2MLNSVLAQB7DTK4D7SUNRIEFMRGOU7DMYFGF55BY"],
+        accounts=[governance],
         on_complete=transaction.OnComplete.NoOpOC
     )
 
