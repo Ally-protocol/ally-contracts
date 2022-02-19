@@ -17,7 +17,7 @@ action_boot = Bytes("bootstrap")
 action_mint_price = Bytes("set_mint_price")
 action_redeem_price = Bytes("set_redeem_price")
 action_toggle = Bytes("toggle_redeem")
-action_join = Bytes("join")
+action_commit = Bytes("commit")
 action_vote = Bytes("vote")
 action_mint = Bytes("mint")
 action_redeem = Bytes("redeem")
@@ -147,24 +147,33 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
             Approve()
         )
 
-    def join():
+    def commit():
+        app_call = Gtxn[0]
+        well_formed_commit = And(
+            Global.group_size() == Int(1),
+            app_call.type_enum() == TxnType.ApplicationCall,
+            app_call.sender() == governor,
+        )
+
+        commited_algos = App.globalGet(commited_algos_key) + Btoi(Txn.application_args[2])
+        
         return Seq(
-            Assert(
-                And(
-                    Txn.type_enum() == TxnType.ApplicationCall,
-                    Txn.sender() == governor,
-                )
-            ),
+            # TODO: uncomment when done testing on dev
+            # Assert(!before_lock_start),
+            # Assert(!after_lock_stop),
+            Assert(well_formed_commit),
             InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields({
-                TxnField.type_enum: TxnType.Payment,
-                TxnField.receiver: Txn.accounts[1],  # address of goverance
-                TxnField.amount: Int(0),
-                TxnField.note: Txn.application_args[
-                    1
-                ], # expecting a valid note as the 2nd element in app args array
-            }),
+            InnerTxnBuilder.SetFields(
+                {
+                    TxnField.type_enum: TxnType.Payment,
+                    TxnField.receiver: Txn.accounts[1],
+                    TxnField.amount: Int(0),
+                    TxnField.note: Txn.application_args[1],
+                    TxnField.fee: Int(0),
+                }
+            ),
             InnerTxnBuilder.Submit(),
+            App.globalPut(commited_algos_key, commited_algos),
             Approve(),
         )
 
@@ -271,7 +280,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
         [Txn.application_args[0] == action_mint_price, set_mint_price()],
         [Txn.application_args[0] == action_redeem_price, set_redeem_price()],
         [Txn.application_args[0] == action_toggle, toggle_redeem()],
-        [Txn.application_args[0] == action_join, join()],
+        [Txn.application_args[0] == action_commit, commit()],
         [Txn.application_args[0] == action_vote, vote()],
         [Txn.application_args[0] == action_mint, mint()],
         [Txn.application_args[0] == action_redeem, redeem()],

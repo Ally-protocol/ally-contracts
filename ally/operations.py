@@ -376,7 +376,7 @@ def commit(commit_amount: int, client: AlgodClient, governors: List[Account], ap
         sender=msig.address(),
         sp=client.suggested_params(),
         index=app_id,
-        app_args=["vote", "af/gov1-" + json.dumps({"com": commit_amount})],
+        app_args=["commit", "af/gov1-" + json.dumps({"com": commit_amount}), commit_amount],
         accounts=[governance],
         on_complete=transaction.OnComplete.NoOpOC
     )
