@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, '')
-
 import os
 import dotenv
 
@@ -56,6 +53,9 @@ def test_toggle_redeem():
     new_redeem_state = state[b"ar"]
 
     assert redeem_state == 1 - new_redeem_state
+    
+    # set it back for further tests
+    toggle_redeem(client, governors, app_id, version, threshold)
 
 def test_set_governor_as_funder():
     creator = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))

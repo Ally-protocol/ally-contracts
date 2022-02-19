@@ -366,7 +366,7 @@ def vote(client: AlgodClient, governors: List[Account], app_id: int, multisig_th
 
     wait_for_transaction(client, tx_id)
 
-def commit(commit_amount: int, client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int, governance: str):):
+def commit(commit_amount: int, client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int, governance: str):
     msig = transaction.Multisig(
         1, multisig_threshold,
         [governor.get_address() for governor in governors]
