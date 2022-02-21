@@ -6,7 +6,7 @@ from algosdk.future import transaction
 from algosdk import encoding
 
 from ally.account import Account
-from ally.operations import set_mint_price, set_redeem_price, toggle_redeem, set_governor, set_multisig_governor
+from ally.operations import set_mint_price, set_redeem_price, set_ally_reward_rate, toggle_redeem, set_governor, set_multisig_governor
 from ally.utils import get_algod_client, get_app_global_state, get_governors
 
 
@@ -42,6 +42,19 @@ def test_redeem_price():
     state = get_app_global_state(client, app_id)
     current_redeem_price = state[b"rp"]
     assert new_redeem_price == current_redeem_price
+
+def test_ally_reward_rate():
+    state = get_app_global_state(client, app_id)
+    current_ally_reward_rate = state[b"rr"]
+    new_ally_reward_rate = current_ally_reward_rate + 1_000
+
+    assert current_ally_reward_rate > 0
+
+    set_ally_reward_rate(new_ally_reward_rate, client, governors, app_id, version, threshold)
+
+    state = get_app_global_state(client, app_id)
+    current_ally_reward_rate = state[b"rr"]
+    assert new_ally_reward_rate == current_ally_reward_rate
 
 def test_toggle_redeem():
     state = get_app_global_state(client, app_id)

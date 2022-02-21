@@ -28,7 +28,7 @@ from algosdk.logic import get_application_address
 from algosdk import encoding
 from pyteal import compileTeal, Mode
 
-from .utils import get_balances, is_opted_in_asset, wait_for_transaction
+from .utils import get_balances, is_opted_in_asset, is_opted_in_contract, wait_for_transaction
 from .account import Account
 from .contracts.pool import get_approval_src, get_clear_src
 
@@ -42,7 +42,7 @@ def create_pool(client: AlgodClient, governors: List[Account], multisig_threshol
     clear_bytes = b64decode(clear_result["result"])
 
     global_schema = transaction.StateSchema(num_uints=32, num_byte_slices=32)
-    local_schema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
+    local_schema = transaction.StateSchema(num_uints=8, num_byte_slices=8)
     
     msig = transaction.Multisig(
         1, multisig_threshold, 
@@ -196,6 +196,17 @@ def update_pool(client: AlgodClient, governors: List[Account], multisig_threshol
     
     
 def mint_walgo(client: AlgodClient, sender: Account, app_id: int, asset_id: int, amount: int):
+    if not is_opted_in_contract(client, app_id, sender.get_address()):
+        txn = transaction.ApplicationOptInTxn(
+            sender=sender.get_address(),
+            sp=client.suggested_params(),
+            index=app_id
+        )
+        signed_txn = txn.sign(sender.get_private_key())
+        client.send_transaction(signed_txn)
+
+        wait_for_transaction(client, txn.get_txid())
+
     if not is_opted_in_asset(client, asset_id, sender.get_address()):
         txn = transaction.AssetOptInTxn(
             sender=sender.get_address(),
@@ -323,6 +334,33 @@ def set_redeem_price(redeem_price: int, client: AlgodClient, governors: List[Acc
         sp=client.suggested_params(),
         index=app_id,
         app_args=["set_redeem_price", redeem_price.to_bytes(8, 'big')],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
+
+
+def set_ally_reward_rate(ally_reward_rate: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+    msig = transaction.Multisig(
+        1, multisig_threshold,
+        [governor.get_address() for governor in governors]
+    )
+
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["set_ally_reward_rate", ally_reward_rate.to_bytes(8, 'big')],
         on_complete=transaction.OnComplete.NoOpOC
     )
 

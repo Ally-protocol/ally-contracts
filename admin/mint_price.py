@@ -41,8 +41,6 @@ if __name__ == '__main__':
     current_mint_price = state[b"mp"]
 
     if len(sys.argv) >= 2 and sys.argv[1] == "--get":
-        state = get_app_global_state(client, app_id)
-        current_mint_price = state[b"mp"]
         print(current_mint_price)
     elif len(sys.argv) >= 3 and sys.argv[1] == "--set":
         new_mint_price = int(sys.argv[2])
