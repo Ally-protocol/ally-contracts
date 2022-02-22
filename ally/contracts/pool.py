@@ -155,7 +155,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
             app_call.sender() == governor,
         )
 
-        committed_algos_key = App.globalGet(committed_algos_key) + Btoi(Txn.application_args[2])
+        committed_algos = App.globalGet(committed_algos_key) + Btoi(Txn.application_args[2])
         
         return Seq(
             # TODO: uncomment when done testing on dev

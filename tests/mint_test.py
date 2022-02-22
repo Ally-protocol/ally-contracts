@@ -28,7 +28,7 @@ def test_mint():
     if walgo_id in balances.keys():
         previous_walgo = balances[walgo_id]
 
-    amount = 10_000_000
+    amount = 1_000_000
 
     mint_walgo(client, minter, app_id, walgo_id, amount)
 
