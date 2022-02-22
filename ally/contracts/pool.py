@@ -5,17 +5,23 @@ from pyteal import *
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO_IN_MICRO = 1_000_000_000 # TODO test with 1M
 
+# Global State
 governor_key = Bytes("gv")
 pool_token_key = Bytes("pt")
 mint_price_key = Bytes("mp")
 redeem_price_key = Bytes("rp")
 committed_algos_key = Bytes("co")
 allow_redeem_key = Bytes("ar")
+ally_reward_rate_key = Bytes("rr")
+
+# Local State
+allys_key = Bytes("allys")
 
 action_governor = Bytes("set_governor")
 action_boot = Bytes("bootstrap")
 action_mint_price = Bytes("set_mint_price")
 action_redeem_price = Bytes("set_redeem_price")
+action_ally_reward_rate = Bytes("set_ally_reward_rate")
 action_toggle = Bytes("toggle_redeem")
 action_commit = Bytes("commit")
 action_vote = Bytes("vote")
@@ -52,6 +58,17 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
         )
         return Seq(
             Return(algos)
+        )
+
+    # ALLYs to reward based on the ally reward rate
+    @Subroutine(TealType.uint64)
+    def allys_to_reward(amount: TealType.uint64):
+        allys = WideRatio(
+            [App.globalGet(ally_reward_rate_key), amount],
+            [Int(ONE_ALGO_IN_MICRO)]
+        )
+        return Seq(
+            Return(allys)
         )
 
     # Function to make an asset transfer
@@ -139,6 +156,15 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
             Approve()
         )
 
+    # Function to set a new ally reward rate - admin action
+    def set_ally_reward_rate():
+        new_ally_reward_rate = Txn.application_args[1]
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(ally_reward_rate_key, Btoi(new_ally_reward_rate)),
+            Approve()
+        )
+
     # Function to enable/disable redemption - admin action
     def toggle_redeem():
         return Seq(
@@ -212,6 +238,11 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
         pool_balance = AssetHolding.balance(contract_address, pool_token)
         app_call = Gtxn[0]
         payment = Gtxn[1]
+        # calculates the walgos amount
+        walgos_amount = walgos_to_mint(payment.amount() - Int(1_000)) # TODO use payment.fee()
+        # calculates ally reward
+        ally_amount = allys_to_reward(walgos_amount)
+        ally_reward = ally_amount + App.localGet(Int(0), allys_key)
         return Seq(
             pool_balance,
             Assert(
@@ -229,8 +260,9 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
             axfer(
                 payment.sender(),
                 pool_token,
-                walgos_to_mint(payment.amount() - Int(1_000)) # TODO use payment.fee()
+                walgos_amount
             ),
+            App.localPut(Int(0), allys_key, ally_reward),
             Approve(),
         )
 
@@ -267,6 +299,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
     handle_creation = Seq(
         App.globalPut(mint_price_key, Int(ONE_ALGO_IN_MICRO)),
         App.globalPut(redeem_price_key, Int(ONE_ALGO_IN_MICRO)),
+        App.globalPut(ally_reward_rate_key, Int(ONE_ALGO_IN_MICRO)),
         App.globalPut(allow_redeem_key, Int(1)),
         App.globalPut(committed_algos_key, Int(0)),
         App.globalPut(governor_key, Txn.sender()),
@@ -279,6 +312,7 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
         [Txn.application_args[0] == action_governor, set_governor()],
         [Txn.application_args[0] == action_mint_price, set_mint_price()],
         [Txn.application_args[0] == action_redeem_price, set_redeem_price()],
+        [Txn.application_args[0] == action_ally_reward_rate, set_ally_reward_rate()],
         [Txn.application_args[0] == action_toggle, toggle_redeem()],
         [Txn.application_args[0] == action_commit, commit()],
         [Txn.application_args[0] == action_vote, vote()],
@@ -292,13 +326,13 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
         [Txn.on_completion() == OnComplete.DeleteApplication, Return(Txn.sender() == governor)],
         [Txn.on_completion() == OnComplete.UpdateApplication, Return(Txn.sender() == governor)],
         [Txn.on_completion() == OnComplete.CloseOut, Approve()],
-        [Txn.on_completion() == OnComplete.OptIn, Reject()],
+        [Txn.on_completion() == OnComplete.OptIn, Approve()],
         [Txn.on_completion() == OnComplete.NoOp, router],
     )
 
 
 def clear():
-    return Approve()
+    return Reject()
 
 # Compiling functions
 def get_approval_src(**kwargs):

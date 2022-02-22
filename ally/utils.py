@@ -187,6 +187,13 @@ def is_opted_in_asset(client: AlgodClient, asset_id: int, addr: str):
             return True
     return False
 
+def is_opted_in_contract(client: AlgodClient, app_id: int, addr: str):
+    account_info = client.account_info(addr)
+    for a in account_info.get('apps-local-state', []):
+        if a['id'] == app_id:
+            return True
+    return False
+
 
 accountList: List[Account] = []
 FUNDING_AMOUNT = 100_000_000
