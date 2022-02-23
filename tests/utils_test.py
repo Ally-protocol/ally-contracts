@@ -25,15 +25,3 @@ def test_get_kmd_client():
     response = kmd.versions()
     expected = ["v1"]
     assert response == expected
-
-
-def test_get_genesis_accounts():
-    kmd = get_kmd_client(os.environ.get("KMD_ADDRESS"), os.environ.get("KMD_TOKEN"))
-
-    accounts = get_genesis_accounts(kmd)
-
-    assert len(accounts) == 3
-    assert all(encoding.is_valid_address(account.get_address()) for account in accounts)
-    assert all(
-        len(base64.b64decode(account.get_private_key())) == 64 for account in accounts
-    )

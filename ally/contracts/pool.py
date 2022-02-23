@@ -4,6 +4,7 @@ from pyteal import *
 
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO_IN_MICRO = 1_000_000_000 # TODO test with 1M
+VERSION = 5
 
 # Global State
 governor_key = Bytes("gv")
@@ -28,15 +29,9 @@ action_vote = Bytes("vote")
 action_mint = Bytes("mint")
 action_redeem = Bytes("redeem")
 
-# Takes unix timestamp for locked windows
-def approval(lock_start: int = 0, lock_stop: int = 0):
-    assert lock_start < lock_stop
 
+def approval():
     governor = App.globalGet(governor_key)
-
-    # Checks for if we're in the window for this action
-    before_lock_start = Global.latest_timestamp() < Int(lock_start)
-    after_lock_stop = Global.latest_timestamp() > Int(lock_stop)
 
     # Amount of walgos to mint based on the paid algos
     @Subroutine(TealType.uint64)
@@ -184,9 +179,6 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
         committed_algos = App.globalGet(committed_algos_key) + Btoi(Txn.application_args[2])
         
         return Seq(
-            # TODO: uncomment when done testing on dev
-            # Assert(!before_lock_start),
-            # Assert(!after_lock_stop),
             Assert(well_formed_commit),
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
@@ -211,9 +203,6 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
             app_call.sender() == governor,
         )
         return Seq(
-            # TODO: uncomment when done testing on dev
-            # Assert(!before_lock_start),
-            # Assert(!after_lock_stop),
             Assert(well_formed_vote),
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
@@ -247,7 +236,6 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
             pool_balance,
             Assert(
                 And(
-                    # before_lock_start, # TODO: uncomment when done testing on dev
                     Global.group_size() == Int(2),  # App call, Payment to mint
                     app_call.type_enum() == TxnType.ApplicationCall,
                     app_call.assets[0] == pool_token,
@@ -332,21 +320,21 @@ def approval(lock_start: int = 0, lock_stop: int = 0):
 
 
 def clear():
-    return Reject()
+    return Approve()
 
 # Compiling functions
-def get_approval_src(**kwargs):
-    return compileTeal(approval(**kwargs), mode=Mode.Application, version=5)
+def pool_approval_src():
+    return compileTeal(approval(), mode=Mode.Application, version=VERSION)
 
-def get_clear_src(**kwargs):
-    return compileTeal(clear(**kwargs), mode=Mode.Application, version=5)
+def pool_clear_src():
+    return compileTeal(clear(), mode=Mode.Application, version=VERSION)
 
 # When executing this file, compile this PyTeal into TEAL
 if __name__ == "__main__":
     path = os.path.dirname(os.path.abspath(__file__))
 
     with open(os.path.join(path, "approval.teal"), "w") as f:
-        f.write(get_approval_src(lock_start=1, lock_stop=10))
+        f.write(pool_approval_src())
 
     with open(os.path.join(path, "clear.teal"), "w") as f:
-        f.write(get_clear_src())
+        f.write(pool_clear_src())

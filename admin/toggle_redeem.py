@@ -14,7 +14,7 @@ import dotenv
 from typing import List
 
 from ally.account import Account
-from ally.operations import toggle_redeem
+from ally.operations.admin import toggle_redeem
 from ally.utils import get_algod_client
 from algosdk.future import transaction
 
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
 
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
-    app_id = int(os.environ.get("APP_ID"))
+    app_id = int(os.environ.get("POOL_APP_ID"))
     version = 1
 
     governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))

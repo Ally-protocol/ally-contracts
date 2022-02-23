@@ -5,12 +5,19 @@ import os
 import dotenv
 
 from ally.account import Account
-from ally.operations import update_pool
+from ally.operations.deploy import update
 from ally.utils import get_algod_client
 
 
 if __name__ == '__main__':
     dotenv.load_dotenv(".env")
+
+    if(len(sys.argv) < 2):
+        print("available contracts: [pool | ally]")
+        exit(0)
+    else:
+        contract = sys.argv[1]
+        app_id = int(os.environ.get(f"{contract.upper()}_APP_ID"))
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
 
@@ -20,7 +27,5 @@ if __name__ == '__main__':
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
     
     governors = [governor1, governor2, governor3]
-
-    app_id = int(os.environ.get("APP_ID"))
     
-    update_pool(client, governors, threshold, app_id)
+    update(contract, client, governors, threshold, app_id)
