@@ -1,6 +1,6 @@
 """
-Deploys contract/pool.py application
-Deployment retuns an app_id and walgo_id that should be copied to the .env file
+Deploys pool.py or ally.py contracts
+Deployment retuns an app_id that should be copied to the .env file
 Deployment is set to be done using a multisignature account composed by 3 governors
 After that, all governor (admin) actions in the 'admin' folder must be done by the same multisignature account
 """
@@ -14,13 +14,20 @@ import dotenv
 from algosdk.logic import get_application_address
 from algosdk.future import transaction
 
-from ally.operations import bootstrap_pool, create_pool
+from ally.operations.deploy import bootstrap, create
 from ally.utils import get_algod_client, get_app_global_state, get_balances, wait_for_transaction
 from ally.account import Account
 
 
 if __name__ == '__main__':
     dotenv.load_dotenv(".env")
+
+    if(len(sys.argv) < 2):
+        print("available contracts: [pool | ally]")
+        exit(0)
+    else:
+        contract = sys.argv[1]
+
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
 
@@ -45,10 +52,10 @@ if __name__ == '__main__':
         client.send_transaction(signed_pay_txn)
         wait_for_transaction(client, pay_txn.get_txid())
 
-    app_id = create_pool(client, governors, threshold)
+    app_id = create(contract, client, governors, threshold)
 
-    print(f"App ID: {app_id}")
-    print(f"App address: {get_application_address(app_id)}")
+    print(f"APP ID: {app_id}")
+    print(f"APP ADDRESS: {get_application_address(app_id)}")
 
     if get_balances(client, get_application_address(app_id))[0] < 202_000:
         pay_txn = transaction.PaymentTxn(
@@ -61,8 +68,8 @@ if __name__ == '__main__':
         client.send_transaction(signed_pay_txn)
         wait_for_transaction(client, pay_txn.get_txid())
     
-    bootstrap_pool(client, governors, threshold, app_id)
+    bootstrap(client, governors, threshold, app_id)
     
     state = get_app_global_state(client, app_id)
     
-    print("Global state: ", state)
+    print("Global State: ", state)

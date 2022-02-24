@@ -2,7 +2,7 @@ import os
 import dotenv
 
 from ally.account import Account
-from ally.operations import mint_walgo
+from ally.operations.user import mint_walgo
 from ally.utils import get_algod_client, get_app_global_state, get_app_local_state, get_balances
 
 PRECISION = 1_000_000_000
@@ -11,7 +11,7 @@ FEE = 1000
 dotenv.load_dotenv('.env')
 
 client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
-app_id = int(os.environ.get("APP_ID"))
+app_id = int(os.environ.get("POOL_APP_ID"))
 walgo_id = int(os.environ.get("WALGO_ID"))
 minter = Account.from_mnemonic(os.environ.get("MINTER_MNEMONIC"))
 

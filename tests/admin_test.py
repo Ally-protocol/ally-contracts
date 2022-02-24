@@ -6,13 +6,13 @@ from algosdk.future import transaction
 from algosdk import encoding
 
 from ally.account import Account
-from ally.operations import set_mint_price, set_redeem_price, set_ally_reward_rate, toggle_redeem, set_governor, set_multisig_governor
+from ally.operations.admin import set_mint_price, set_redeem_price, set_ally_reward_rate, toggle_redeem, set_governor, set_multisig_governor
 from ally.utils import get_algod_client, get_app_global_state, get_governors
 
 
 dotenv.load_dotenv('.env')
 client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
-app_id = int(os.environ.get("APP_ID"))
+app_id = int(os.environ.get("POOL_APP_ID"))
 version = 1
 threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
 governors = get_governors()
@@ -30,6 +30,9 @@ def test_mint_price():
     current_mint_price = state[b"mp"]
     assert new_mint_price == current_mint_price
 
+    # set it back to 1 for further testing
+    set_mint_price(1_000_000_000, client, governors, app_id, version, threshold)
+
 def test_redeem_price():
     state = get_app_global_state(client, app_id)
     current_redeem_price = state[b"rp"]
@@ -42,6 +45,9 @@ def test_redeem_price():
     state = get_app_global_state(client, app_id)
     current_redeem_price = state[b"rp"]
     assert new_redeem_price == current_redeem_price
+
+    # set it back to 1 for further testing
+    set_redeem_price(1_000_000_000, client, governors, app_id, version, threshold)
 
 def test_ally_reward_rate():
     state = get_app_global_state(client, app_id)

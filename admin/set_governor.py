@@ -14,7 +14,7 @@ import dotenv
 from typing import List
 
 from ally.account import Account
-from ally.operations import set_governor
+from ally.operations.admin import set_governor
 from ally.utils import get_algod_client
 
 
@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     creator = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))
 
-    app_id = int(os.environ.get("APP_ID"))
+    app_id = int(os.environ.get("POOL_APP_ID"))
 
     governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
     governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))

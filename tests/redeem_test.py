@@ -3,7 +3,8 @@ import dotenv
 import pytest
 
 from ally.account import Account
-from ally.operations import redeem_walgo, toggle_redeem
+from ally.operations.user import redeem_walgo
+from ally.operations.admin import toggle_redeem
 from ally.utils import get_algod_client, get_app_global_state, get_governors, get_balances
 
 from algosdk import error
@@ -14,7 +15,7 @@ FEE = 1000
 dotenv.load_dotenv('.env')
 
 client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
-app_id = int(os.environ.get("APP_ID"))
+app_id = int(os.environ.get("POOL_APP_ID"))
 walgo_id = int(os.environ.get("WALGO_ID"))
 minter = Account.from_mnemonic(os.environ.get("MINTER_MNEMONIC"))
 
@@ -22,7 +23,7 @@ version = 1
 threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
 governors = get_governors()
 
-amount = 10_000_000
+amount = 1_000_000
 
 def test_redeem():
     address = minter.get_address()

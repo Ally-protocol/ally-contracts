@@ -44,11 +44,15 @@ also the MULTISIG_THRESHOLD should be filled with a number equal or less than th
 - Deploy contract and create pool token
 
 ```
-python deploy/deploy.py
+python deploy/deploy.py pool
+python deploy/deploy.py ally
 ```
 
-- The deployment returns an APP_ID that you have to insert in the .env file to interact with the contract
-- In the deployment result look for the 'pt' (pool token) value and assign it to WALGO_ID in the .env
+The deployment returns an APP_ID that you have to insert in the .env file.
+Insert them in POOL_APP_ID and ALLY_APP_ID correspondingly.
+Each deploy returns the global state.
+The pool deployment returns the WALGO_ID in the "pt" key. Copy it to .env.
+The ally deployment returns the ALLY_ID in the "tk" key. Copy it to .env.
 
 - Run tests
 ```
