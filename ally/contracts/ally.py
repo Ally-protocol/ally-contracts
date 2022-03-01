@@ -180,12 +180,17 @@ def approval():
     )
 
     # Routes the NoOp to the corresponding action based on the first app param
-    router = Cond(
-        [Txn.application_args[0] == action_boot, bootstrap()],
-        [Txn.application_args[0] == action_pool_id, set_pool_id()],
-        [Txn.application_args[0] == action_price, set_price()],
-        [Txn.application_args[0] == action_claim, claim()],
-        [Txn.application_args[0] == action_sell, Reject()], #sell()],
+    router = Seq(
+        Assert(Txn.close_remainder_to() == Global.zero_address()),
+        Assert(Txn.asset_close_to() == Global.zero_address()),
+        Assert(Txn.rekey_to() == Global.zero_address()),
+        Cond(
+            [Txn.application_args[0] == action_boot, bootstrap()],
+            [Txn.application_args[0] == action_pool_id, set_pool_id()],
+            [Txn.application_args[0] == action_price, set_price()],
+            [Txn.application_args[0] == action_claim, claim()],
+            [Txn.application_args[0] == action_sell, Reject()], #sell()],
+        )
     )
 
     # Routes the OnComplete actions to the corresponding action
