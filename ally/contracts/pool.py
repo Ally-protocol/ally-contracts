@@ -295,17 +295,22 @@ def approval():
     )
 
     # Routes the NoOp to the corresponding action based on the first app param
-    router = Cond(
-        [Txn.application_args[0] == action_boot, bootstrap()],
-        [Txn.application_args[0] == action_governor, set_governor()],
-        [Txn.application_args[0] == action_mint_price, set_mint_price()],
-        [Txn.application_args[0] == action_redeem_price, set_redeem_price()],
-        [Txn.application_args[0] == action_ally_reward_rate, set_ally_reward_rate()],
-        [Txn.application_args[0] == action_toggle, toggle_redeem()],
-        [Txn.application_args[0] == action_commit, commit()],
-        [Txn.application_args[0] == action_vote, vote()],
-        [Txn.application_args[0] == action_mint, mint()],
-        [Txn.application_args[0] == action_redeem, redeem()],
+    router = Seq(
+        Assert(Txn.close_remainder_to() == Global.zero_address()),
+        Assert(Txn.asset_close_to() == Global.zero_address()),
+        Assert(Txn.rekey_to() == Global.zero_address()),
+        Cond(
+            [Txn.application_args[0] == action_boot, bootstrap()],
+            [Txn.application_args[0] == action_governor, set_governor()],
+            [Txn.application_args[0] == action_mint_price, set_mint_price()],
+            [Txn.application_args[0] == action_redeem_price, set_redeem_price()],
+            [Txn.application_args[0] == action_ally_reward_rate, set_ally_reward_rate()],
+            [Txn.application_args[0] == action_toggle, toggle_redeem()],
+            [Txn.application_args[0] == action_commit, commit()],
+            [Txn.application_args[0] == action_vote, vote()],
+            [Txn.application_args[0] == action_mint, mint()],
+            [Txn.application_args[0] == action_redeem, redeem()],
+        )
     )
 
     # Routes the OnComplete actions to the corresponding action
