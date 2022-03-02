@@ -1,4 +1,6 @@
 import os
+
+from pyteal import WideRatio
 import dotenv
 import pytest
 
@@ -9,7 +11,7 @@ from ally.utils import get_algod_client, get_app_global_state, get_governors, ge
 
 from algosdk import error
 
-PRECISION = 1_000_000_000
+PRECISION = 1_000_000
 FEE = 1000
 
 dotenv.load_dotenv('.env')
@@ -30,6 +32,7 @@ def test_redeem():
     print(f"minter: {address}")
 
     redeem_price = get_app_global_state(client, app_id)[b"rp"]
+    mint_price = get_app_global_state(client, app_id)[b"mp"]
 
     balances = get_balances(client, address)
     previous_algo  = balances[0]
@@ -37,17 +40,21 @@ def test_redeem():
     if walgo_id in balances.keys():
         previous_walgo = balances[walgo_id]
 
-    redeem_walgo(client, minter, app_id, walgo_id, amount)
+    assert previous_walgo > 0
+    print(f"previous_walgo: {previous_walgo}")
+
+    redeem_walgo(client, minter, app_id, walgo_id, previous_walgo)
 
     balances = get_balances(client, address)
     current_algo  = balances[0]
     current_walgo = balances[walgo_id]
 
-    current_minus_redeemed = int(current_algo - (amount * redeem_price)/PRECISION)
+    expected_redeem_algo = int((previous_walgo * redeem_price) / PRECISION)
+    print(f"redeem price: {redeem_price}")
+    print(f"mint price: {mint_price}")
 
-    assert previous_walgo == current_walgo + amount
-    assert (previous_algo - current_minus_redeemed) <= (FEE*2) # 2 transactions
-
+    assert current_walgo == 0
+    assert current_algo == previous_algo - FEE * 2 + expected_redeem_algo
 
 def test_disabled_redeem():
     address = minter.get_address()

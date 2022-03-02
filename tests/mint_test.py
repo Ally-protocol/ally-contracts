@@ -5,7 +5,7 @@ from ally.account import Account
 from ally.operations.user import mint_walgo
 from ally.utils import get_algod_client, get_app_global_state, get_app_local_state, get_balances
 
-PRECISION = 1_000_000_000
+PRECISION = 1_000_000
 FEE = 1000
 
 dotenv.load_dotenv('.env')
@@ -29,8 +29,11 @@ def test_mint():
     previous_allys = local_state[b"allys"]
     previous_algo  = balances[0]
     previous_walgo = 0
+    transaction_count = 4
+
     if walgo_id in balances.keys():
         previous_walgo = balances[walgo_id]
+        transaction_count = 3
 
     amount = 1_000_000
 
@@ -43,13 +46,8 @@ def test_mint():
     current_algo  = balances[0]
     current_walgo = balances[walgo_id]
 
+    expect_minted_walgo = (amount * mint_price) / PRECISION
 
-    assert current_allys - previous_allys == int((amount * ally_reward_rate)/PRECISION)
+    assert current_walgo == previous_walgo + expect_minted_walgo 
+    assert current_algo == previous_algo - amount - FEE * transaction_count
 
-    # not working when changing mint_price
-    # using another mint_price changes the result -300050 # TODO why are there 0.3 more walgos?
-    assert current_walgo - previous_walgo == amount
-
-    # not working when changing mint_price
-    # using another mint_price changes the result +297050 # TODO why are there 0.29 less algos?
-    assert previous_algo - current_algo - (amount * mint_price)/PRECISION <= FEE*4 #why 3 transactions?

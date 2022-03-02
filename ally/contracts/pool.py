@@ -3,7 +3,7 @@ import os
 from pyteal import *
 
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
-ONE_ALGO_IN_MICRO = 1_000_000_000 # TODO test with 1M
+ONE_ALGO_IN_MICRO = 1_000_000 # TODO test with 1M
 VERSION = 5
 
 # Global State
