@@ -41,16 +41,18 @@ if __name__ == '__main__':
     
     msig = transaction.Multisig(1, threshold, [governor.get_address() for governor in governors])
     
-    if get_balances(client, msig.address())[0] < 2_800_000:
+    if get_balances(client, msig.address())[0] < 6_000_000:
         pay_txn = transaction.PaymentTxn(
             sender=funder.get_address(),
             sp=client.suggested_params(),
             receiver=msig.address(),
-            amt=2_800_000
+            amt=2_000_000
         )
         signed_pay_txn = pay_txn.sign(funder.get_private_key())
         client.send_transaction(signed_pay_txn)
         wait_for_transaction(client, pay_txn.get_txid())
+
+    print(f"DEPLOYER: {msig.address()}")
 
     app_id = create(contract, client, governors, threshold)
 

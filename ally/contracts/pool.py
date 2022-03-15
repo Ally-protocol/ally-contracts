@@ -186,7 +186,7 @@ def approval():
                     TxnField.type_enum: TxnType.Payment,
                     TxnField.receiver: Txn.accounts[1],
                     TxnField.amount: Int(0),
-                    TxnField.note: Txn.application_args[1],
+                    #TxnField.note: Txn.application_args[1],
                     TxnField.fee: Int(0),
                 }
             ),
@@ -210,9 +210,7 @@ def approval():
                     TxnField.type_enum: TxnType.Payment,
                     TxnField.receiver: Txn.accounts[1],
                     TxnField.amount: Int(0),
-                    TxnField.note: Txn.application_args[
-                        1
-                    ],  # expecting a valid note as the 2nd element in app args array
+                    #TxnField.note: Txn.application_args[1],
                     TxnField.fee: Int(0),
                 }
             ),
