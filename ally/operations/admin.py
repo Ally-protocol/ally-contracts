@@ -34,7 +34,7 @@ def set_governor(client: AlgodClient, sender: Account, app_id: int, governors: L
     tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
 
     wait_for_transaction(client, tx_id)
-    
+
 def set_multisig_governor(client: AlgodClient, sender: Account, app_id: int, msig: transaction.Multisig):
     print('sender address: ', sender.get_address())
 
@@ -55,7 +55,7 @@ def set_multisig_governor(client: AlgodClient, sender: Account, app_id: int, msi
 
 def toggle_redeem(client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
     msig = transaction.Multisig(
-        1, multisig_threshold,
+        version, multisig_threshold,
         [governor.get_address() for governor in governors]
     )
 
@@ -82,7 +82,7 @@ def toggle_redeem(client: AlgodClient, governors: List[Account], app_id: int, ve
 
 def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
     msig = transaction.Multisig(
-        1, multisig_threshold,
+        version, multisig_threshold,
         [governor.get_address() for governor in governors]
     )
 
@@ -91,7 +91,8 @@ def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account
         sp=client.suggested_params(),
         index=app_id,
         app_args=["set_mint_price", mint_price.to_bytes(8, 'big')],
-        on_complete=transaction.OnComplete.NoOpOC
+        on_complete=transaction.OnComplete.NoOpOC,
+        foreign_assets=[21]
     )
 
     mtx = transaction.MultisigTransaction(txn, msig)
@@ -108,7 +109,7 @@ def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account
 
 def set_redeem_price(redeem_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
     msig = transaction.Multisig(
-        1, multisig_threshold,
+        version, multisig_threshold,
         [governor.get_address() for governor in governors]
     )
 
@@ -117,7 +118,8 @@ def set_redeem_price(redeem_price: int, client: AlgodClient, governors: List[Acc
         sp=client.suggested_params(),
         index=app_id,
         app_args=["set_redeem_price", redeem_price.to_bytes(8, 'big')],
-        on_complete=transaction.OnComplete.NoOpOC
+        on_complete=transaction.OnComplete.NoOpOC,
+        foreign_assets=[21]
     )
 
     mtx = transaction.MultisigTransaction(txn, msig)
@@ -134,7 +136,7 @@ def set_redeem_price(redeem_price: int, client: AlgodClient, governors: List[Acc
 
 def set_ally_price(ally_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
     msig = transaction.Multisig(
-        1, multisig_threshold,
+        version, multisig_threshold,
         [governor.get_address() for governor in governors]
     )
 
@@ -160,7 +162,7 @@ def set_ally_price(ally_price: int, client: AlgodClient, governors: List[Account
 
 def set_pool_id(pool_id: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
     msig = transaction.Multisig(
-        1, multisig_threshold,
+        version, multisig_threshold,
         [governor.get_address() for governor in governors]
     )
 
@@ -187,7 +189,7 @@ def set_pool_id(pool_id: int, client: AlgodClient, governors: List[Account], app
 
 def set_ally_reward_rate(ally_reward_rate: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
     msig = transaction.Multisig(
-        1, multisig_threshold,
+        version, multisig_threshold,
         [governor.get_address() for governor in governors]
     )
 
@@ -197,6 +199,79 @@ def set_ally_reward_rate(ally_reward_rate: int, client: AlgodClient, governors: 
         index=app_id,
         app_args=["set_ally_reward_rate", ally_reward_rate.to_bytes(8, 'big')],
         on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
+
+
+def set_max_mint(max_mint: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+    msig = transaction.Multisig(version, multisig_threshold, [governor.get_address() for governor in governors])
+
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["set_max_mint", max_mint.to_bytes(8, 'big')],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
+
+def set_fee_percentage(fee_percentage: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+    msig = transaction.Multisig(version, multisig_threshold, [governor.get_address() for governor in governors])
+
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["set_fee_percentage", fee_percentage.to_bytes(8, 'big')],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
+
+
+def claim_fee(client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+    msig = transaction.Multisig(version, multisig_threshold, [governor.get_address() for governor in governors])
+
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["claim_fee"],
+        on_complete=transaction.OnComplete.NoOpOC,
+        accounts=["L42GM4UXEH7VPUSNXZMGBUQRSJV2U7PXSUQJHYLVZCN6QA5P7YWM5RMM7U"],
+        foreign_assets=[21]
     )
 
     mtx = transaction.MultisigTransaction(txn, msig)
@@ -251,7 +326,8 @@ def commit(commit_amount: int, client: AlgodClient, governors: List[Account], ap
         index=app_id,
         app_args=["commit", "af/gov1-" + json.dumps({"com": commit_amount}), commit_amount],
         accounts=[governance],
-        on_complete=transaction.OnComplete.NoOpOC
+        on_complete=transaction.OnComplete.NoOpOC,
+        foreign_assets=[21]
     )
 
     mtx = transaction.MultisigTransaction(txn, msig)

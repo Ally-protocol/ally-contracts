@@ -46,7 +46,7 @@ if __name__ == '__main__':
             sender=funder.get_address(),
             sp=client.suggested_params(),
             receiver=msig.address(),
-            amt=2_000_000
+            amt=6_000_000
         )
         signed_pay_txn = pay_txn.sign(funder.get_private_key())
         client.send_transaction(signed_pay_txn)
