@@ -29,6 +29,7 @@ if __name__ == '__main__':
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
+    walgo_id = int(os.environ.get("WALGO_ID"))
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
     
@@ -49,7 +50,7 @@ if __name__ == '__main__':
         if shift == 1:
             print("redeem price is unchanged")
         elif (shift >= MIN and shift <= MAX) or (len(sys.argv) >= 4 and sys.argv[3] == "--force"):
-            set_redeem_price(new_redeem_price, client, governors, app_id, version, threshold)
+            set_redeem_price(new_redeem_price, client, governors, app_id, version, threshold, walgo_id)
         else:
             print("the shift when setting the redeem value should not be greater than 2.5%")
             print("if you meant this, add --force at the end of the command")

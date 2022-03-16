@@ -13,6 +13,7 @@ from ally.utils import get_algod_client, get_app_global_state, get_governors
 dotenv.load_dotenv('.env')
 client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
 pool_app_id = int(os.environ.get("POOL_APP_ID"))
+walgo_id = int(os.environ.get("WALGO_ID"))
 ally_app_id = int(os.environ.get("ALLY_APP_ID"))
 version = 1
 threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
@@ -25,7 +26,7 @@ def test_mint_price():
 
     assert current_mint_price > 0
 
-    set_mint_price(new_mint_price, client, governors, pool_app_id, version, threshold)
+    set_mint_price(new_mint_price, client, governors, pool_app_id, version, threshold, walgo_id)
 
     state = get_app_global_state(client, pool_app_id)
     current_mint_price = state[b"mp"]
@@ -38,7 +39,7 @@ def test_redeem_price():
 
     assert current_redeem_price > 0
 
-    set_redeem_price(new_redeem_price, client, governors, pool_app_id, version, threshold)
+    set_redeem_price(new_redeem_price, client, governors, pool_app_id, version, threshold, walgo_id)
 
     state = get_app_global_state(client, pool_app_id)
     current_redeem_price = state[b"rp"]

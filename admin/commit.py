@@ -20,6 +20,7 @@ if __name__ == '__main__':
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
+    walgo_id = int(os.environ.get("WALGO_ID"))
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
 
@@ -31,5 +32,5 @@ if __name__ == '__main__':
     governors = [governor1, governor2, governor3]
     commit_amount = 1_000_000
 
-    commit(commit_amount, client, governors, app_id, threshold, governance)
+    commit(commit_amount, client, governors, app_id, threshold, governance, walgo_id)
     

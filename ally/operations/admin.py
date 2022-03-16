@@ -80,7 +80,7 @@ def toggle_redeem(client: AlgodClient, governors: List[Account], app_id: int, ve
     wait_for_transaction(client, tx_id)
     
 
-def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int, asset_id: int):
     msig = transaction.Multisig(
         version, multisig_threshold,
         [governor.get_address() for governor in governors]
@@ -92,7 +92,7 @@ def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account
         index=app_id,
         app_args=["set_mint_price", mint_price.to_bytes(8, 'big')],
         on_complete=transaction.OnComplete.NoOpOC,
-        foreign_assets=[21]
+        foreign_assets=[asset_id]
     )
 
     mtx = transaction.MultisigTransaction(txn, msig)
@@ -107,7 +107,7 @@ def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account
 
     wait_for_transaction(client, tx_id)
 
-def set_redeem_price(redeem_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+def set_redeem_price(redeem_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int, asset_id: int):
     msig = transaction.Multisig(
         version, multisig_threshold,
         [governor.get_address() for governor in governors]
@@ -119,7 +119,7 @@ def set_redeem_price(redeem_price: int, client: AlgodClient, governors: List[Acc
         index=app_id,
         app_args=["set_redeem_price", redeem_price.to_bytes(8, 'big')],
         on_complete=transaction.OnComplete.NoOpOC,
-        foreign_assets=[21]
+        foreign_assets=[asset_id]
     )
 
     mtx = transaction.MultisigTransaction(txn, msig)
@@ -261,7 +261,7 @@ def set_fee_percentage(fee_percentage: int, client: AlgodClient, governors: List
     wait_for_transaction(client, tx_id)
 
 
-def claim_fee(client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+def claim_fee(client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int, asset_id: int, ally_address: str):
     msig = transaction.Multisig(version, multisig_threshold, [governor.get_address() for governor in governors])
 
     txn = transaction.ApplicationCallTxn(
@@ -270,8 +270,8 @@ def claim_fee(client: AlgodClient, governors: List[Account], app_id: int, versio
         index=app_id,
         app_args=["claim_fee"],
         on_complete=transaction.OnComplete.NoOpOC,
-        accounts=["L42GM4UXEH7VPUSNXZMGBUQRSJV2U7PXSUQJHYLVZCN6QA5P7YWM5RMM7U"],
-        foreign_assets=[21]
+        accounts=[ally_address],
+        foreign_assets=[asset_id]
     )
 
     mtx = transaction.MultisigTransaction(txn, msig)
@@ -314,7 +314,7 @@ def vote(client: AlgodClient, governors: List[Account], app_id: int, multisig_th
 
     wait_for_transaction(client, tx_id)
 
-def commit(commit_amount: int, client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int, governance: str):
+def commit(commit_amount: int, client: AlgodClient, governors: List[Account], app_id: int, multisig_threshold: int, governance: str, asset_id: int):
     msig = transaction.Multisig(
         1, multisig_threshold,
         [governor.get_address() for governor in governors]
@@ -327,7 +327,7 @@ def commit(commit_amount: int, client: AlgodClient, governors: List[Account], ap
         app_args=["commit", "af/gov1-" + json.dumps({"com": commit_amount}), commit_amount],
         accounts=[governance],
         on_complete=transaction.OnComplete.NoOpOC,
-        foreign_assets=[21]
+        foreign_assets=[asset_id]
     )
 
     mtx = transaction.MultisigTransaction(txn, msig)

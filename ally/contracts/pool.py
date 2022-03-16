@@ -4,6 +4,7 @@ from pyteal import *
 
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO = 1_000_000
+INITIAL_FUNDING = ONE_ALGO
 TEAL_VERSION = 5
 
 # Global State
@@ -74,7 +75,7 @@ def approval():
 
     # Get ratio of ALGO/wALGO
     @Subroutine(TealType.uint64)
-    def algo_walgo_ratio(micro: TealType.uint64):
+    def algo_walgo_ratio():
         contract_address = Global.current_application_address()
         pool_token = App.globalGet(pool_token_key)
         algo_balance = Balance(contract_address)
@@ -82,9 +83,17 @@ def approval():
 
         return Seq(
             pool_balance,
-            Assert(Int(TOTAL_SUPPLY) > pool_balance.value()),
-            Return(
-                WideRatio([algo_balance - Int(200028), micro], [Int(TOTAL_SUPPLY) - pool_balance.value()])
+            If(
+                Int(TOTAL_SUPPLY) > pool_balance.value(),
+                Return(
+                    WideRatio(
+                        [algo_balance - Int(INITIAL_FUNDING), Int(ONE_ALGO)],
+                        [Int(TOTAL_SUPPLY) - pool_balance.value()]
+                    )
+                ),
+                Return(
+                    Int(ONE_ALGO)
+                )
             )
         )
 
@@ -152,12 +161,12 @@ def approval():
         contract_address = Global.current_application_address()
         ally_address = Txn.accounts[1]
         algo_balance = Balance(contract_address)
-        current_ratio = algo_walgo_ratio(Int(ONE_ALGO))
+        current_ratio = algo_walgo_ratio()
         fee_percentage = App.globalGet(fee_percentage_key)
         last_commit_price = App.globalGet(last_commit_price_key)
         amount = WideRatio(
             [fee_percentage, algo_balance, current_ratio - last_commit_price],
-            [Int(ONE_ALGO), Int(ONE_ALGO)]
+            [Int(ONE_ALGO), Int(100)]
         )
 
         return Seq(
@@ -179,10 +188,9 @@ def approval():
     # Function to set a new mint price - admin action
     def set_mint_price():
         new_mint_price = Btoi(Txn.application_args[1])
-        ratio = algo_walgo_ratio(Int(ONE_ALGO))
         return Seq(
             Assert(Txn.sender() == governor),
-            Assert(new_mint_price > ratio),
+            Assert(new_mint_price > algo_walgo_ratio()),
             App.globalPut(mint_price_key, new_mint_price),
             Approve()
         )
@@ -190,12 +198,9 @@ def approval():
     # Function to set a new redeem price - admin action
     def set_redeem_price():
         new_redeem_price = Btoi(Txn.application_args[1])
-        maximum = algo_walgo_ratio(Int(ONE_ALGO))
-        minimum = algo_walgo_ratio(Int(900_000))
         return Seq(
             Assert(Txn.sender() == governor),
-            Assert(new_redeem_price < maximum),
-            Assert(new_redeem_price > minimum),
+            Assert(new_redeem_price < algo_walgo_ratio()),
             App.globalPut(redeem_price_key, new_redeem_price),
             Approve()
         )
@@ -214,8 +219,8 @@ def approval():
         new_fee_percentage = Btoi(Txn.application_args[1])
         return Seq(
             Assert(Txn.sender() == governor),
-            Assert(new_fee_percentage < Int(300_000)),
             Assert(new_fee_percentage >= Int(0)),
+            Assert(new_fee_percentage <= Int(30)),
             App.globalPut(fee_percentage_key, new_fee_percentage),
             Approve()
         )
@@ -246,7 +251,6 @@ def approval():
         )
 
         committed_algos = Btoi(Txn.application_args[2])
-        commit_price = algo_walgo_ratio(Int(ONE_ALGO))
         
         return Seq(
             Assert(well_formed_commit),
@@ -262,7 +266,7 @@ def approval():
             ),
             InnerTxnBuilder.Submit(),
             App.globalPut(committed_algos_key, committed_algos),
-            App.globalPut(last_commit_price_key, commit_price),
+            App.globalPut(last_commit_price_key, algo_walgo_ratio()),
             Approve(),
         )
 
@@ -312,7 +316,7 @@ def approval():
                     payment.sender() == app_call.sender(),
                     payment.receiver() == contract_address,
                     payment.amount() > Int(1_000),
-                    payment.amount() <= App.globalGet(max_mint_key),
+                    payment.amount() <= App.globalGet(max_mint_key) + Int(1_000),
                 )
             ),
             axfer(
@@ -358,7 +362,7 @@ def approval():
         App.globalPut(redeem_price_key, Int(ONE_ALGO)),
         App.globalPut(ally_reward_rate_key, Int(ONE_ALGO)),
         App.globalPut(last_commit_price_key, Int(ONE_ALGO)),
-        App.globalPut(fee_percentage_key, Int(100_000)),
+        App.globalPut(fee_percentage_key, Int(10)),
         App.globalPut(max_mint_key, Int(10_000_000)),
         App.globalPut(allow_redeem_key, Int(1)),
         App.globalPut(committed_algos_key, Int(0)),

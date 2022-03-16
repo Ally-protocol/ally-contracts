@@ -1,10 +1,13 @@
 import os
-
+import dotenv
 from pyteal import *
 
+dotenv.load_dotenv(".env")
+POOL_APP_ID = int(os.environ.get("POOL_APP_ID"))
+
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
-ONE_ALGO_IN_MICRO = 1_000_000
-VERSION = 5
+ONE_ALGO = 1_000_000
+TEAL_VERSION = 5
 
 # Global State
 governor_key = Bytes("gv")
@@ -30,7 +33,7 @@ def approval():
     def algos_to_pay(ally_amount: TealType.uint64):
         algos = WideRatio(
             [App.globalGet(price_key), ally_amount],
-            [Int(ONE_ALGO_IN_MICRO)]
+            [Int(ONE_ALGO)]
         )
         return Seq(
             Return(algos)
@@ -174,8 +177,8 @@ def approval():
     # Initialize the Global State on creation
     handle_creation = Seq(
         App.globalPut(governor_key, Txn.sender()),
-        App.globalPut(pool_id_key, Int(72902835)),
-        App.globalPut(price_key, Int(ONE_ALGO_IN_MICRO)),
+        App.globalPut(pool_id_key, Int(POOL_APP_ID)),
+        App.globalPut(price_key, Int(ONE_ALGO)),
         Approve()
     )
 
@@ -209,10 +212,10 @@ def clear():
 
 # Compiling functions
 def ally_approval_src():
-    return compileTeal(approval(), mode=Mode.Application, version=VERSION)
+    return compileTeal(approval(), mode=Mode.Application, version=TEAL_VERSION)
 
 def ally_clear_src():
-    return compileTeal(clear(), mode=Mode.Application, version=VERSION)
+    return compileTeal(clear(), mode=Mode.Application, version=TEAL_VERSION)
 
 # When executing this file, compile this PyTeal into TEAL
 if __name__ == "__main__":
