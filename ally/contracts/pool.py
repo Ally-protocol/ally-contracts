@@ -35,10 +35,10 @@ def approval():
 
     # Amount of walgos to mint based on the paid algos
     @Subroutine(TealType.uint64)
-    def walgos_to_mint(microalgos: TealType.uint64):
+    def walgos_to_mint(algos: TealType.uint64):
         amount = WideRatio(
-            [App.globalGet(mint_price_key), microalgos],
-            [Int(ONE_ALGO_IN_MICRO)]
+            [Int(ONE_ALGO_IN_MICRO), algos],
+            [App.globalGet(mint_price_key)]
         )
         return Seq(
             Return(amount)
