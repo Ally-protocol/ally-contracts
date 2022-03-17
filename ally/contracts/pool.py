@@ -171,6 +171,8 @@ def approval():
 
         return Seq(
             Assert(Txn.sender() == governor),
+            Assert(current_ratio > last_commit_price),
+            Assert(algo_balance > Int(1_000)),
             Assert(amount > Int(1_000)),
             pay(ally_address, amount),
             Approve()
