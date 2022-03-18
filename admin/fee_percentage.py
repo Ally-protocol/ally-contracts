@@ -1,9 +1,9 @@
 """
-Purpose: manipulate the mint price
+Purpose: manipulate the fee percentage used when claiming (sending) the fee to the ally treasure
 Features: set & get
 Actor: The current contract governor (admin)
-When: setting the mint price 
-How: `python admin/mint_price.py --set 1_020_000`
+When: setting the fee percentage
+How: `python admin/fee_percentage.py --set 300_000`
 """
 
 import sys
@@ -15,21 +15,15 @@ import dotenv
 from typing import List
 from algosdk import encoding
 from ally.account import Account
-from ally.operations.admin import set_mint_price
+from ally.operations.admin import set_fee_percentage
 from ally.utils import get_algod_client, get_app_global_state
 from algosdk.future import transaction
-
-ALLOWED_SHIFT = 2.5 # percent
-
-MIN = 1 - ALLOWED_SHIFT/100
-MAX = 1 + ALLOWED_SHIFT/100
 
 if __name__ == '__main__':
     dotenv.load_dotenv('.env')
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
-    walgo_id = int(os.environ.get("WALGO_ID"))
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
     
@@ -39,23 +33,15 @@ if __name__ == '__main__':
     governors = [governor1, governor2, governor3]
 
     state = get_app_global_state(client, app_id)
-    current_mint_price = state[b"mp"]
+    current_fee_percentage = state[b"fp"]
 
     if len(sys.argv) >= 2 and sys.argv[1] == "--get":
-        print(current_mint_price)
+        print(current_fee_percentage)
     elif len(sys.argv) >= 3 and sys.argv[1] == "--set":
-        new_mint_price = int(sys.argv[2])
-        shift = (new_mint_price/current_mint_price)
-
-        if shift == 1:
-            print("mint price is unchanged")
-        elif (shift >= MIN and shift <= MAX) or (len(sys.argv) >= 4 and sys.argv[3] == "--force"):
-            set_mint_price(new_mint_price, client, governors, app_id, version, threshold, walgo_id)
-        else:
-            print("the shift when setting the mint value should not be greater than 2.5%")
-            print("if you meant this, add --force at the end of the command")
+        new_fee_percentage = int(sys.argv[2])
+        set_fee_percentage(new_fee_percentage, client, governors, app_id, version, threshold)
     else:
         print("available actions:")
-        print("\t--get \t\treturns the current mint price")
-        print("\t--set VALUE \tsets the mint price to the given value")
+        print("\t--get \t\treturns the current fee percentage")
+        print("\t--set VALUE \tsets the fee percentage to the given value")
     

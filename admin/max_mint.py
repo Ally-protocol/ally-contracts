@@ -1,9 +1,9 @@
 """
-Purpose: manipulate the mint price
+Purpose: manipulate the maximum mint amount per transaction
 Features: set & get
 Actor: The current contract governor (admin)
-When: setting the mint price 
-How: `python admin/mint_price.py --set 1_020_000`
+When: setting the max mint
+How: `python admin/max_mint.py --set 10_000_000`
 """
 
 import sys
@@ -15,21 +15,15 @@ import dotenv
 from typing import List
 from algosdk import encoding
 from ally.account import Account
-from ally.operations.admin import set_mint_price
+from ally.operations.admin import set_max_mint
 from ally.utils import get_algod_client, get_app_global_state
 from algosdk.future import transaction
-
-ALLOWED_SHIFT = 2.5 # percent
-
-MIN = 1 - ALLOWED_SHIFT/100
-MAX = 1 + ALLOWED_SHIFT/100
 
 if __name__ == '__main__':
     dotenv.load_dotenv('.env')
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
-    walgo_id = int(os.environ.get("WALGO_ID"))
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
     
@@ -39,23 +33,15 @@ if __name__ == '__main__':
     governors = [governor1, governor2, governor3]
 
     state = get_app_global_state(client, app_id)
-    current_mint_price = state[b"mp"]
+    current_max_mint = state[b"mm"]
 
     if len(sys.argv) >= 2 and sys.argv[1] == "--get":
-        print(current_mint_price)
+        print(current_max_mint)
     elif len(sys.argv) >= 3 and sys.argv[1] == "--set":
-        new_mint_price = int(sys.argv[2])
-        shift = (new_mint_price/current_mint_price)
-
-        if shift == 1:
-            print("mint price is unchanged")
-        elif (shift >= MIN and shift <= MAX) or (len(sys.argv) >= 4 and sys.argv[3] == "--force"):
-            set_mint_price(new_mint_price, client, governors, app_id, version, threshold, walgo_id)
-        else:
-            print("the shift when setting the mint value should not be greater than 2.5%")
-            print("if you meant this, add --force at the end of the command")
+        new_max_mint = int(sys.argv[2])
+        set_max_mint(new_max_mint, client, governors, app_id, version, threshold)
     else:
         print("available actions:")
-        print("\t--get \t\treturns the current mint price")
-        print("\t--set VALUE \tsets the mint price to the given value")
+        print("\t--get \t\treturns the current maximum mint amount per transaction")
+        print("\t--set VALUE \tsets the maximum mint amount to the given value")
     

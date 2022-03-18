@@ -46,7 +46,7 @@ if __name__ == '__main__':
             sender=funder.get_address(),
             sp=client.suggested_params(),
             receiver=msig.address(),
-            amt=2_000_000
+            amt=6_000_000
         )
         signed_pay_txn = pay_txn.sign(funder.get_private_key())
         client.send_transaction(signed_pay_txn)
@@ -59,12 +59,13 @@ if __name__ == '__main__':
     print(f"APP ID: {app_id}")
     print(f"APP ADDRESS: {get_application_address(app_id)}")
 
-    if get_balances(client, get_application_address(app_id))[0] < 202_000:
+    if get_balances(client, get_application_address(app_id))[0] < 300_000:
         pay_txn = transaction.PaymentTxn(
             sender=funder.get_address(),
             sp=client.suggested_params(),
             receiver=get_application_address(app_id),
-            amt=202_000
+            #amt=202_000
+            amt=1_000_000
         )
         signed_pay_txn = pay_txn.sign(funder.get_private_key())
         client.send_transaction(signed_pay_txn)

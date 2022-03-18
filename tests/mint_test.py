@@ -26,7 +26,11 @@ def test_mint():
 
     mint_price = global_state[b"mp"]
     ally_reward_rate = global_state[b"rr"]
-    previous_allys = local_state[b"allys"]
+    previous_allys = 0
+
+    if "allys" in local_state.keys():
+        previous_allys = local_state[b"allys"]
+
     previous_algo  = balances[0]
     previous_walgo = 0
     transaction_count = 4

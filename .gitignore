@@ -2,6 +2,8 @@ venv/
 .env
 .env.main
 .env.test
+.env.local
+fill.py
 __pycache__/
 *.teal
 _sandbox
