@@ -65,7 +65,7 @@ if __name__ == '__main__':
             sp=client.suggested_params(),
             receiver=get_application_address(app_id),
             #amt=202_000
-            amt=1_000_000
+            amt=1_001_000
         )
         signed_pay_txn = pay_txn.sign(funder.get_private_key())
         client.send_transaction(signed_pay_txn)
