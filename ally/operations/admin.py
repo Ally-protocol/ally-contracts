@@ -261,6 +261,31 @@ def set_fee_percentage(fee_percentage: int, client: AlgodClient, governors: List
     wait_for_transaction(client, tx_id)
 
 
+def set_last_commit_price(last_commit_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int):
+    msig = transaction.Multisig(version, multisig_threshold, [governor.get_address() for governor in governors])
+
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["set_last_commit_price", last_commit_price.to_bytes(8, 'big')],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+
+    idxs = random.sample(range(0, len(governors)), multisig_threshold)
+    for idx in idxs:
+        mtx.sign(governors[idx].get_private_key())
+
+    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
+
+    wait_for_transaction(client, tx_id)
+
+
+
 def claim_fee(client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int, asset_id: int, ally_address: str):
     msig = transaction.Multisig(version, multisig_threshold, [governor.get_address() for governor in governors])
 

@@ -29,6 +29,7 @@ action_redeem_price = Bytes("set_redeem_price")
 action_ally_reward_rate = Bytes("set_ally_reward_rate")
 action_fee_percentage = Bytes("set_fee_percentage")
 action_max_mint = Bytes("set_max_mint")
+action_last_commit_price = Bytes("set_last_commit_price")
 action_claim_fee = Bytes("claim_fee")
 action_toggle = Bytes("toggle_redeem")
 action_commit = Bytes("commit")
@@ -235,6 +236,15 @@ def approval():
             App.globalPut(max_mint_key, new_max_mint),
             Approve()
         )
+        
+    # Function to set a the maximum mint amount per transaction - admin action
+    def set_last_commit_price():
+        new_last_commit_price = Btoi(Txn.application_args[1])
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(last_commit_price_key, new_last_commit_price),
+            Approve()
+        )
 
     # Function to enable/disable redemption - admin action
     def toggle_redeem():
@@ -385,6 +395,7 @@ def approval():
             [Txn.application_args[0] == action_ally_reward_rate, set_ally_reward_rate()],
             [Txn.application_args[0] == action_fee_percentage, set_fee_percentage()],
             [Txn.application_args[0] == action_max_mint, set_max_mint()],
+            [Txn.application_args[0] == action_last_commit_price, set_last_commit_price()],
             [Txn.application_args[0] == action_claim_fee, claim_fee()],
             [Txn.application_args[0] == action_toggle, toggle_redeem()],
             [Txn.application_args[0] == action_commit, commit()],
