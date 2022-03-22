@@ -33,7 +33,7 @@ if __name__ == '__main__':
     governors = [governor1, governor2, governor3]
 
     state = get_app_global_state(client, app_id)
-    current_last_commit_price = state[b"mm"]
+    current_last_commit_price = state[b"lc"]
 
     if len(sys.argv) >= 2 and sys.argv[1] == "--get":
         print(current_last_commit_price)
