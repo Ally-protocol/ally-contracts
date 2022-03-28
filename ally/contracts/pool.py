@@ -43,7 +43,7 @@ def approval():
 
     # Amount of walgos to mint based on the paid algos
     @Subroutine(TealType.uint64)
-    def walgos_to_mint(algos: TealType.uint64):
+    def walgos_to_mint(algos):
         amount = WideRatio(
             [Int(ONE_ALGO), algos],
             [App.globalGet(mint_price_key)]
@@ -54,7 +54,7 @@ def approval():
 
     # ALGOs to pay based on the burned wALGOs amount
     @Subroutine(TealType.uint64)
-    def algos_to_redeem(amount: TealType.uint64):
+    def algos_to_redeem(amount):
         algos = WideRatio(
             [App.globalGet(redeem_price_key), amount],
             [Int(ONE_ALGO)]
@@ -65,7 +65,7 @@ def approval():
 
     # ALLYs to reward based on the ally reward rate
     @Subroutine(TealType.uint64)
-    def allys_to_reward(amount: TealType.uint64):
+    def allys_to_reward(amount):
         allys = WideRatio(
             [App.globalGet(ally_reward_rate_key), amount],
             [Int(ONE_ALGO)]
@@ -100,7 +100,7 @@ def approval():
 
     # Function to make an asset transfer
     @Subroutine(TealType.none)
-    def axfer(receiver: TealType.bytes, asset_id: TealType.uint64, amount: TealType.uint64):
+    def axfer(receiver, asset_id, amount):
         return Seq(
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
@@ -116,7 +116,7 @@ def approval():
 
     # Function to make a payment transfer
     @Subroutine(TealType.none)
-    def pay(receiver: TealType.bytes, amount: TealType.uint64):
+    def pay(receiver, amount):
         return Seq(
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(

@@ -6,7 +6,7 @@ from algosdk.future import transaction
 from algosdk.logic import get_application_address
 from algosdk import encoding
 
-from ally.utils import is_opted_in_asset, is_opted_in_contract, wait_for_transaction
+from ally.utils import is_opted_in_asset, is_opted_in_contract, wait_for_transaction, send_transaction
 from ally.account import Account
 
 
@@ -17,10 +17,7 @@ def mint_walgo(client: AlgodClient, sender: Account, app_id: int, asset_id: int,
             sp=client.suggested_params(),
             index=app_id
         )
-        signed_txn = txn.sign(sender.get_private_key())
-        client.send_transaction(signed_txn)
-
-        wait_for_transaction(client, txn.get_txid())
+        send_transaction(client, sender, txn)
 
     if not is_opted_in_asset(client, asset_id, sender.get_address()):
         txn = transaction.AssetOptInTxn(
@@ -28,10 +25,7 @@ def mint_walgo(client: AlgodClient, sender: Account, app_id: int, asset_id: int,
             sp=client.suggested_params(),
             index=asset_id
         )
-        signed_txn = txn.sign(sender.get_private_key())
-        client.send_transaction(signed_txn)
-
-        wait_for_transaction(client, txn.get_txid())
+        send_transaction(client, sender, txn)
         
     call_txn = transaction.ApplicationCallTxn(
         sender=sender.get_address(),

@@ -14,8 +14,9 @@ import dotenv
 from typing import List
 
 from ally.account import Account
-from ally.operations.admin import set_governor
+from ally.operations.live.admin import set_governor
 from ally.utils import get_algod_client
+from algosdk.future import transaction
 
 
 if __name__ == '__main__':
@@ -30,11 +31,14 @@ if __name__ == '__main__':
 
     app_id = int(os.environ.get("POOL_APP_ID"))
 
-    governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
-    governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
-    governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
-
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
     
-    set_governor(client, creator, app_id, [governor1, governor2, governor3], version, threshold)
+    governor1 = os.environ.get("GOVERNOR1")
+    governor2 = os.environ.get("GOVERNOR2")
+    governor3 = os.environ.get("GOVERNOR3")
+    governors = [governor1, governor2, governor3]
+
+    msig = transaction.Multisig(version, threshold, [governor.get_address() for governor in governors])    
+    
+    set_governor(client, creator, app_id, msig)

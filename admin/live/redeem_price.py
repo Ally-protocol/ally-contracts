@@ -12,10 +12,7 @@ sys.path.insert(0, '')
 import os
 import dotenv
 
-from typing import List
-from algosdk import encoding
-from ally.account import Account
-from ally.operations.admin import set_redeem_price
+from ally.operations.live.admin import set_redeem_price
 from ally.utils import get_algod_client, get_app_global_state
 from algosdk.future import transaction
 
@@ -30,13 +27,16 @@ if __name__ == '__main__':
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
     walgo_id = int(os.environ.get("WALGO_ID"))
+    
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
     
-    governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
-    governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
-    governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
+    governor1 = os.environ.get("GOVERNOR1")
+    governor2 = os.environ.get("GOVERNOR2")
+    governor3 = os.environ.get("GOVERNOR3")
     governors = [governor1, governor2, governor3]
+
+    msig = transaction.Multisig(version, threshold, [governor.get_address() for governor in governors])    
 
     state = get_app_global_state(client, app_id)
     current_redeem_price = state[b"rp"]
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         if shift == 1:
             print("redeem price is unchanged")
         elif (shift >= MIN and shift <= MAX) or (len(sys.argv) >= 4 and sys.argv[3] == "--force"):
-            set_redeem_price(new_redeem_price, client, governors, app_id, version, threshold, walgo_id)
+            set_redeem_price(new_redeem_price, client, msig, app_id, walgo_id)
         else:
             print("the shift when setting the redeem value should not be greater than 2.5%")
             print("if you meant this, add --force at the end of the command")

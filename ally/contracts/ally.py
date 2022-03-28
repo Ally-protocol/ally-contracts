@@ -1,9 +1,5 @@
 import os
-import dotenv
 from pyteal import *
-
-dotenv.load_dotenv(".env")
-POOL_APP_ID = int(os.environ.get("POOL_APP_ID"))
 
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO = 1_000_000
@@ -30,7 +26,7 @@ def approval():
 
     # ALGOs to pay based on allys price
     @Subroutine(TealType.uint64)
-    def algos_to_pay(ally_amount: TealType.uint64):
+    def algos_to_pay(ally_amount):
         algos = WideRatio(
             [App.globalGet(price_key), ally_amount],
             [Int(ONE_ALGO)]
@@ -41,7 +37,7 @@ def approval():
 
     # Function to make an asset transfer
     @Subroutine(TealType.none)
-    def axfer(receiver: TealType.bytes, asset_id: TealType.uint64, amount: TealType.uint64):
+    def axfer(receiver, asset_id, amount):
         return Seq(
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
@@ -57,7 +53,7 @@ def approval():
         
     # Function to make a payment transfer
     @Subroutine(TealType.none)
-    def pay(receiver: TealType.bytes, amount: TealType.uint64):
+    def pay(receiver, amount):
         return Seq(
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
@@ -177,7 +173,6 @@ def approval():
     # Initialize the Global State on creation
     handle_creation = Seq(
         App.globalPut(governor_key, Txn.sender()),
-        App.globalPut(pool_id_key, Int(POOL_APP_ID)),
         App.globalPut(price_key, Int(ONE_ALGO)),
         Approve()
     )

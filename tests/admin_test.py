@@ -6,7 +6,7 @@ from algosdk.future import transaction
 from algosdk import encoding
 
 from ally.account import Account
-from ally.operations.admin import set_mint_price, set_redeem_price, set_ally_reward_rate, set_ally_price, set_pool_id, toggle_redeem, set_governor, set_multisig_governor
+from ally.operations.test.admin import set_mint_price, set_redeem_price, set_ally_reward_rate, set_ally_price, set_pool_id, toggle_redeem, set_governor, set_multisig_governor
 from ally.utils import get_algod_client, get_app_global_state, get_governors
 
 

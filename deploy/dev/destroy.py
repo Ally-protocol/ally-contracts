@@ -5,7 +5,7 @@ import os
 import dotenv
 
 from ally.account import Account
-from ally.operations.deploy import update
+from ally.operations.dev.deploy import destroy
 from ally.utils import get_algod_client
 
 
@@ -20,12 +20,6 @@ if __name__ == '__main__':
         app_id = int(os.environ.get(f"{contract.upper()}_APP_ID"))
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
-
-    governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
-    governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
-    governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
-    threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
+    funder = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))
     
-    governors = [governor1, governor2, governor3]
-    
-    update(contract, client, governors, threshold, app_id)
+    destroy(client, funder, app_id)

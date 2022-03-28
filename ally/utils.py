@@ -15,7 +15,6 @@ Available Functions:
 - get_governors
 """
 import os
-import dotenv
 
 from base64 import b64decode
 from typing import Dict, Union, List, Any, Optional
@@ -80,6 +79,12 @@ def wait_for_transaction(
         )
     )
     return PendingTxnResponse(pending_txn)
+
+def send_transaction(client: AlgodClient, sender: Account, txn: transaction.Transaction):
+    signed_txn = txn.sign(sender.get_private_key())
+    tx_id = client.send_transaction(signed_txn)
+
+    wait_for_transaction(client, tx_id)    
 
 
 def fully_compile_contract(client: AlgodClient, contract: Expr) -> bytes:
@@ -233,10 +238,9 @@ def get_temporary_account(client: AlgodClient, kmd: KMDClient) -> Account:
     return accountList.pop()
 
 def get_governors():
-    dotenv.load_dotenv('.env')
 
-    governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
-    governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
-    governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
+    governor1 = Account.from_mnemonic(os.environ.get("TEST_GOVERNOR1_MNEMONIC"))
+    governor2 = Account.from_mnemonic(os.environ.get("TEST_GOVERNOR2_MNEMONIC"))
+    governor3 = Account.from_mnemonic(os.environ.get("TEST_GOVERNOR3_MNEMONIC"))
 
     return [governor1, governor2, governor3]

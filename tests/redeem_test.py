@@ -6,7 +6,7 @@ import pytest
 
 from ally.account import Account
 from ally.operations.user import redeem_walgo
-from ally.operations.admin import toggle_redeem
+from ally.operations.test.admin import toggle_redeem
 from ally.utils import get_algod_client, get_app_global_state, get_governors, get_balances
 
 from algosdk import error

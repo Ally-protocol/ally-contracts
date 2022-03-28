@@ -12,12 +12,9 @@ sys.path.insert(0, '')
 import os
 import dotenv
 
-from typing import List
-from algosdk import encoding
 from ally.account import Account
-from ally.operations.admin import set_mint_price
+from ally.operations.dev.admin import set_mint_price
 from ally.utils import get_algod_client, get_app_global_state
-from algosdk.future import transaction
 
 ALLOWED_SHIFT = 2.5 # percent
 
@@ -30,13 +27,7 @@ if __name__ == '__main__':
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
     walgo_id = int(os.environ.get("WALGO_ID"))
-    version = 1
-    threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
-    
-    governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
-    governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
-    governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
-    governors = [governor1, governor2, governor3]
+    funder = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))
 
     state = get_app_global_state(client, app_id)
     current_mint_price = state[b"mp"]
@@ -50,7 +41,7 @@ if __name__ == '__main__':
         if shift == 1:
             print("mint price is unchanged")
         elif (shift >= MIN and shift <= MAX) or (len(sys.argv) >= 4 and sys.argv[3] == "--force"):
-            set_mint_price(new_mint_price, client, governors, app_id, version, threshold, walgo_id)
+            set_mint_price(new_mint_price, client, funder, app_id, walgo_id)
         else:
             print("the shift when setting the mint value should not be greater than 2.5%")
             print("if you meant this, add --force at the end of the command")
