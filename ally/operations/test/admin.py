@@ -1,14 +1,11 @@
-import os
 import random
 import json
-from datetime import datetime
 from typing import List
 from algosdk.v2client.algod import AlgodClient
 from algosdk.future import transaction
-from algosdk.logic import get_application_address
 from algosdk import encoding
 
-from ally.utils import is_opted_in_asset, is_opted_in_contract, wait_for_transaction
+from ally.utils import wait_for_transaction
 from ally.account import Account
 
 def set_governor(client: AlgodClient, sender: Account, app_id: int, governors: List[Account], version: int, multisig_threshold: int):
@@ -106,56 +103,6 @@ def set_mint_price(mint_price: int, client: AlgodClient, governors: List[Account
         mtx.sign(governors[idx].get_private_key())
 
     tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
-
-    wait_for_transaction(client, tx_id)
-
-def set_multisig_mint_price(mint_price: int, client: AlgodClient, governors: List[Account], app_id: int, version: int, multisig_threshold: int, asset_id: int):
-    msig = transaction.Multisig(
-        version, multisig_threshold, governors
-    )
-
-    txn = transaction.ApplicationCallTxn(
-        sender=msig.address(),
-        sp=client.suggested_params(),
-        index=app_id,
-        app_args=["set_mint_price", mint_price.to_bytes(8, 'big')],
-        on_complete=transaction.OnComplete.NoOpOC,
-        foreign_assets=[asset_id]
-    )
-
-    mtx = transaction.MultisigTransaction(txn, msig)
-
-    dir_path = os.path.dirname(__file__)
-    file_path = os.path.join(dir_path, 'tx_files')
-
-    date_time = datetime.today().strftime('%Y-%m-%d')
-    filename = '/unsigned_mint_price-' + date_time + '.mtx'
-
-    transaction.write_to_file(
-        [mtx], file_path + filename)
-
-def merge_signed_transactions(client: AlgodClient, governors: List[Account]):
-    version = 1
-    threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
-
-    msig = transaction.Multisig(
-        version, threshold, governors
-    )
-
-    print(f"Sender: {msig.address()}")
-
-    dir_path = os.path.dirname(__file__)
-    file_path = os.path.join(dir_path, 'tx_files')
-
-    unsigned_tx = transaction.retrieve_from_file(file_path + "/unsigned_mint_price-2022-03-24.mtx")
-    mtx = unsigned_tx[0]
-
-    sign1_tx = transaction.retrieve_from_file(file_path + "/governor1.signed.txn")
-    sign2_tx = transaction.retrieve_from_file(file_path + "/governor2.signed.txn")
-    sign3_tx = transaction.retrieve_from_file(file_path + "/governor3.signed.txn")
-
-    signed_mtx = mtx.merge([sign1_tx[0], sign2_tx[0], sign3_tx[0]])
-    tx_id = client.send_transaction(signed_mtx)
 
     wait_for_transaction(client, tx_id)
 

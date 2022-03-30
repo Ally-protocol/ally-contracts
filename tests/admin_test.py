@@ -35,7 +35,7 @@ def test_mint_price():
 def test_redeem_price():
     state = get_app_global_state(client, pool_app_id)
     current_redeem_price = state[b"rp"]
-    new_redeem_price = current_redeem_price + 1_000
+    new_redeem_price = current_redeem_price - 1_000
 
     assert current_redeem_price > 0
 
@@ -61,7 +61,7 @@ def test_set_ally_price():
 def test_set_pool_id():
     state = get_app_global_state(client, ally_app_id)
     previous_pool_id = state[b"pl"]
-    new_pool_id = 1233145
+    new_pool_id = pool_app_id
 
     assert previous_pool_id > 0
 
@@ -72,15 +72,15 @@ def test_set_pool_id():
     assert new_pool_id == current_pool_id
 
 def test_ally_reward_rate():
-    state = get_app_global_state(client, ally_app_id)
+    state = get_app_global_state(client, pool_app_id)
     current_ally_reward_rate = state[b"rr"]
     new_ally_reward_rate = current_ally_reward_rate + 1_000
 
     assert current_ally_reward_rate > 0
 
-    set_ally_reward_rate(new_ally_reward_rate, client, governors, ally_app_id, version, threshold)
+    set_ally_reward_rate(new_ally_reward_rate, client, governors, pool_app_id, version, threshold)
 
-    state = get_app_global_state(client, ally_app_id)
+    state = get_app_global_state(client, pool_app_id)
     current_ally_reward_rate = state[b"rr"]
     assert new_ally_reward_rate == current_ally_reward_rate
 

@@ -19,7 +19,7 @@ dotenv.load_dotenv('.env')
 client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
 app_id = int(os.environ.get("POOL_APP_ID"))
 walgo_id = int(os.environ.get("WALGO_ID"))
-minter = Account.from_mnemonic(os.environ.get("MINTER_MNEMONIC"))
+minter = Account.from_mnemonic(os.environ.get("TEST_MINTER_MNEMONIC"))
 
 version = 1
 threshold = int(os.environ.get("MULTISIG_THRESHOLD"))

@@ -298,7 +298,6 @@ def approval():
                     TxnField.receiver: Txn.accounts[1],
                     TxnField.amount: Int(0),
                     #TxnField.note: Txn.application_args[1],
-                    TxnField.fee: Int(0),
                 }
             ),
             InnerTxnBuilder.Submit(),

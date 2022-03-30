@@ -13,7 +13,7 @@ dotenv.load_dotenv('.env')
 client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
 app_id = int(os.environ.get("POOL_APP_ID"))
 walgo_id = int(os.environ.get("WALGO_ID"))
-minter = Account.from_mnemonic(os.environ.get("MINTER_MNEMONIC"))
+minter = Account.from_mnemonic(os.environ.get("TEST_MINTER_MNEMONIC"))
 
 
 def test_mint():
@@ -25,6 +25,8 @@ def test_mint():
     balances = get_balances(client, address)
 
     mint_price = global_state[b"mp"]
+    print(f"fee: {mint_price}")
+
     ally_reward_rate = global_state[b"rr"]
     previous_allys = 0
 
@@ -50,7 +52,7 @@ def test_mint():
     current_algo  = balances[0]
     current_walgo = balances[walgo_id]
 
-    expect_minted_walgo = (amount * mint_price) / PRECISION
+    expect_minted_walgo = int((amount * PRECISION) / mint_price)
 
     assert current_walgo == previous_walgo + expect_minted_walgo 
     assert current_algo == previous_algo - amount - FEE * transaction_count
