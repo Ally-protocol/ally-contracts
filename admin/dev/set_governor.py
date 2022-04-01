@@ -29,9 +29,7 @@ if __name__ == '__main__':
     creator = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))
     app_id = int(os.environ.get("POOL_APP_ID"))
 
-    governor1 = os.environ.get("GOVERNOR1")
-    governor2 = os.environ.get("GOVERNOR2")
-    governor3 = os.environ.get("GOVERNOR3")
+    governor = os.environ.get("MUTISIG_GOVERNOR")
 
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))

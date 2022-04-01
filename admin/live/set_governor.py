@@ -14,7 +14,7 @@ import dotenv
 from typing import List
 
 from ally.account import Account
-from ally.operations.live.admin import set_governor
+from ally.operations.live.admin import set_multisig_governor
 from ally.utils import get_algod_client
 from algosdk.future import transaction
 
@@ -39,6 +39,6 @@ if __name__ == '__main__':
     governor3 = os.environ.get("GOVERNOR3")
     governors = [governor1, governor2, governor3]
 
-    msig = transaction.Multisig(version, threshold, [governor.get_address() for governor in governors])    
+    msig = transaction.Multisig(version, threshold, governors)    
     
-    set_governor(client, creator, app_id, msig)
+    set_multisig_governor(client, creator, app_id, msig)

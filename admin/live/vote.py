@@ -32,7 +32,7 @@ if __name__ == '__main__':
     governor3 = os.environ.get("GOVERNOR3")
     governors = [governor1, governor2, governor3]
 
-    msig = transaction.Multisig(version, threshold, [governor.get_address() for governor in governors])    
+    msig = transaction.Multisig(version, threshold, governors)
 
     commit_amount = 1_000
 

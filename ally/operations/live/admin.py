@@ -8,7 +8,7 @@ from algosdk.future import transaction
 from algosdk.logic import get_application_address
 from algosdk import encoding
 
-from ally.utils import wait_for_transaction
+from ally.utils import wait_for_transaction, send_transaction
 from ally.account import Account
 
 def set_governor(client: AlgodClient, sender: Account, app_id: int, msig: transaction.Multisig):
@@ -26,6 +26,19 @@ def set_governor(client: AlgodClient, sender: Account, app_id: int, msig: transa
     mtx = transaction.MultisigTransaction(txn, msig)
     save_mtx_file(mtx)
 
+def set_multisig_governor(client: AlgodClient, sender: Account, app_id: int, msig: transaction.Multisig):
+    print('sender address: ', sender.get_address())
+
+    txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=[b"set_governor"],
+        accounts=[msig.address()],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    send_transaction(client, sender, txn)
 
 def toggle_redeem(client: AlgodClient, msig: transaction.Multisig, app_id: int):
     txn = transaction.ApplicationCallTxn(

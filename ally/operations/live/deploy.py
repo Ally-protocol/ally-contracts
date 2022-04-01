@@ -1,3 +1,4 @@
+import os
 import random
 from base64 import b64decode
 from typing import List
@@ -101,7 +102,7 @@ def destroy(client: AlgodClient, governors: List[Account], multisig_threshold: i
     wait_for_transaction(client, tx_id)
     
 
-def update(contract: str, client: AlgodClient, governors: List[Account], multisig_threshold: int, app_id: int):
+def update(contract: str, client: AlgodClient, msig: transaction.Multisig, app_id: int):
 
     if(contract == "pool"):
         app_result = client.compile(pool_approval_src())
@@ -114,11 +115,8 @@ def update(contract: str, client: AlgodClient, governors: List[Account], multisi
     app_bytes = b64decode(app_result["result"])
     clear_bytes = b64decode(clear_result["result"])
     
-    msig = transaction.Multisig(
-        1, multisig_threshold, 
-        [governor.get_address() for governor in governors]
-    )
     print(f"Sender: {msig.address()}")
+
     txn = transaction.ApplicationUpdateTxn(
         sender=msig.address(),
         sp=client.suggested_params(),
@@ -127,11 +125,13 @@ def update(contract: str, client: AlgodClient, governors: List[Account], multisi
         clear_program=clear_bytes
     )
     mtx = transaction.MultisigTransaction(txn, msig)
-    
-    idxs = random.sample(range(0, len(governors)), multisig_threshold)
-    for idx in idxs:
-        mtx.sign(governors[idx].get_private_key())
-    
-    tx_id = client.send_raw_transaction(encoding.msgpack_encode(mtx))
-    
-    wait_for_transaction(client, tx_id)
+    save_mtx_file(mtx)
+
+def save_mtx_file(mtx: transaction.MultisigTransaction):
+    dir_path = os.path.dirname(__file__)
+    file_path = os.path.join(dir_path, 'tx_files')
+
+    filename = '/unsigned.mtx'
+
+    transaction.write_to_file(
+        [mtx], file_path + filename)

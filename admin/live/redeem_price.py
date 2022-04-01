@@ -36,7 +36,7 @@ if __name__ == '__main__':
     governor3 = os.environ.get("GOVERNOR3")
     governors = [governor1, governor2, governor3]
 
-    msig = transaction.Multisig(version, threshold, [governor.get_address() for governor in governors])    
+    msig = transaction.Multisig(version, threshold, governors)
 
     state = get_app_global_state(client, app_id)
     current_redeem_price = state[b"rp"]
