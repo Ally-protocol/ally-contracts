@@ -12,24 +12,29 @@ import os
 import dotenv
 
 from ally.account import Account
-from ally.operations.admin import vote
+from ally.operations.live.admin import vote
 from ally.utils import get_algod_client
+from algosdk.future import transaction
 
 if __name__ == '__main__':
     dotenv.load_dotenv('.env')
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
-    version = 1
-    threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
-
+    
     governance = os.environ.get("GOVERNANCE_ADDRESS")
 
-    governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
-    governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
-    governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
+    version = 1
+    threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
+    
+    governor1 = os.environ.get("GOVERNOR1")
+    governor2 = os.environ.get("GOVERNOR2")
+    governor3 = os.environ.get("GOVERNOR3")
     governors = [governor1, governor2, governor3]
+
+    msig = transaction.Multisig(version, threshold, governors)
+
     commit_amount = 1_000
 
-    vote(client, governors, app_id, threshold, governance)
+    vote(client, msig, app_id, governance)
     

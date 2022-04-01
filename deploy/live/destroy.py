@@ -5,7 +5,7 @@ import os
 import dotenv
 
 from ally.account import Account
-from ally.operations.deploy import destroy
+from ally.operations.live.deploy import destroy
 from ally.utils import get_algod_client
 
 

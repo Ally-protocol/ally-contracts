@@ -12,10 +12,7 @@ sys.path.insert(0, '')
 import os
 import dotenv
 
-from typing import List
-from algosdk import encoding
-from ally.account import Account
-from ally.operations.admin import set_ally_reward_rate
+from ally.operations.live.admin import set_ally_reward_rate
 from ally.utils import get_algod_client, get_app_global_state
 from algosdk.future import transaction
 
@@ -24,13 +21,16 @@ if __name__ == '__main__':
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
+
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
     
-    governor1 = Account.from_mnemonic(os.environ.get("GOVERNOR1_MNEMONIC"))
-    governor2 = Account.from_mnemonic(os.environ.get("GOVERNOR2_MNEMONIC"))
-    governor3 = Account.from_mnemonic(os.environ.get("GOVERNOR3_MNEMONIC"))
+    governor1 = os.environ.get("GOVERNOR1")
+    governor2 = os.environ.get("GOVERNOR2")
+    governor3 = os.environ.get("GOVERNOR3")
     governors = [governor1, governor2, governor3]
+
+    msig = transaction.Multisig(version, threshold, governors)    
 
     state = get_app_global_state(client, app_id)
     current_ally_reward_rate = state[b"rr"]
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         if shift == 1:
             print("ally reward rate is unchanged")
         else:
-            set_ally_reward_rate(new_ally_reward_rate, client, governors, app_id, version, threshold)
+            set_ally_reward_rate(new_ally_reward_rate, client, msig, app_id)
     else:
         print("available actions:")
         print("\t--get \t\treturns the current ally reward rate price")

@@ -16,7 +16,7 @@ pool_app_id = int(os.environ.get("POOL_APP_ID"))
 walgo_id = int(os.environ.get("WALGO_ID"))
 ally_app_id = int(os.environ.get("ALLY_APP_ID"))
 ally_id = int(os.environ.get("ALLY_ID"))
-minter = Account.from_mnemonic(os.environ.get("MINTER_MNEMONIC"))
+minter = Account.from_mnemonic(os.environ.get("TEST_MINTER_MNEMONIC"))
 amount = 3_000_000
 
 def test_claim():
