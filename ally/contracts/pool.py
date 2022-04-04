@@ -176,6 +176,8 @@ def approval():
             Assert(algo_balance > Int(1_000)),
             Assert(amount > Int(1_000)),
             pay(ally_address, amount),
+            App.globalPut(mint_price_key, algo_walgo_ratio()),
+            App.globalPut(redeem_price_key, algo_walgo_ratio()),
             Approve()
         )
 
