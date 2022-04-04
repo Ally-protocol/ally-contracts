@@ -222,7 +222,7 @@ def approval():
         new_fee_percentage = Btoi(Txn.application_args[1])
         return Seq(
             Assert(Txn.sender() == governor),
-            Assert(new_fee_percentage >= Int(0)),
+            Assert(new_fee_percentage > Int(0)),
             Assert(new_fee_percentage <= Int(30)),
             App.globalPut(fee_percentage_key, new_fee_percentage),
             Approve()
@@ -256,13 +256,20 @@ def approval():
 
     def commit():
         app_call = Gtxn[0]
+        committed_algos = Btoi(Txn.application_args[2])
+        new_mint_price = Btoi(Txn.application_args[3])
+        new_redeem_price = Btoi(Txn.application_args[4])
+        new_fee_percentage = Btoi(Txn.application_args[5])
+
         well_formed_commit = And(
             Global.group_size() == Int(1),
             app_call.type_enum() == TxnType.ApplicationCall,
             app_call.sender() == governor,
+            new_mint_price > algo_walgo_ratio(),
+            new_redeem_price < algo_walgo_ratio(),
+            new_fee_percentage > Int(0),
+            new_fee_percentage <= Int(30),
         )
-
-        committed_algos = Btoi(Txn.application_args[2])
         
         return Seq(
             Assert(well_formed_commit),
@@ -279,6 +286,9 @@ def approval():
             InnerTxnBuilder.Submit(),
             App.globalPut(committed_algos_key, committed_algos),
             App.globalPut(last_commit_price_key, algo_walgo_ratio()),
+            App.globalPut(mint_price_key, new_mint_price),
+            App.globalPut(redeem_price_key, new_redeem_price),
+            App.globalPut(fee_percentage_key, new_fee_percentage),
             Approve(),
         )
 

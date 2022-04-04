@@ -2,7 +2,7 @@
 Purpose: manipulate commit action for Algorand governance
 Actor: The current contract governor (admin)
 When: committing to Algorand governance
-How: `python admin/commit_price.py`
+How: `python admin/live/commit.py 3_000_000 1_003_000 950_000 10`
 """
 
 import sys
@@ -21,7 +21,6 @@ if __name__ == '__main__':
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
-    walgo_id = int(os.environ.get("WALGO_ID"))
 
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
@@ -34,7 +33,14 @@ if __name__ == '__main__':
     msig = transaction.Multisig(version, threshold, governors)    
 
     governance = os.environ.get("GOVERNANCE_ADDRESS")
-    commit_amount = 1_000_000
 
-    commit(commit_amount, client, msig, app_id, threshold, governance, walgo_id)
+    if len(sys.argv) == 5:
+        commit_amount = int(sys.argv[1])
+        new_mint_price = int(sys.argv[2])
+        new_redeem_price = int(sys.argv[3])
+        new_fee_percent = int(sys.argv[4])
+
+        commit(commit_amount, client, msig, app_id, governance, new_mint_price, new_redeem_price, new_fee_percent)
+    else:
+        print("Invalid argument counts!")
     
