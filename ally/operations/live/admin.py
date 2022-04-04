@@ -206,15 +206,14 @@ def vote(client: AlgodClient, msig: transaction.Multisig, app_id: int, governanc
     print(f"Sender: {msig.address()}")
     save_mtx_file(mtx)
 
-def commit(commit_amount: int, client: AlgodClient, msig: transaction.Multisig, app_id: int, governance: str, asset_id: int):
+def commit(commit_amount: int, client: AlgodClient, msig: transaction.Multisig, app_id: int, governance: str, new_mint_price: int, new_redeem_price: int, new_fee_percent: int):
     txn = transaction.ApplicationCallTxn(
         sender=msig.address(),
         sp=client.suggested_params(),
         index=app_id,
-        app_args=["commit", "af/gov1:" + json.dumps({"com": commit_amount}), commit_amount],
+        app_args=["commit", "af/gov1:j" + json.dumps({"com": commit_amount}), commit_amount, new_mint_price, new_redeem_price, new_fee_percent],
         accounts=[governance],
         on_complete=transaction.OnComplete.NoOpOC,
-        foreign_assets=[asset_id]
     )
 
     mtx = transaction.MultisigTransaction(txn, msig)
