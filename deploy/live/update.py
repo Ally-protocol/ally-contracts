@@ -31,4 +31,4 @@ if __name__ == '__main__':
     governors = [governor1, governor2, governor3]
 
     msig = transaction.Multisig(version, threshold, governors)    
-    update(contract, client, governors, app_id)
+    update(contract, client, msig, app_id)
