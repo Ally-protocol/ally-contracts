@@ -37,4 +37,4 @@ if __name__ == '__main__':
 
     ally_address = get_application_address(ally_app_id)
 
-    claim_fee(client, msig, pool_app_id, walgo_id, ally_address)
+    claim_fee(client, msig, pool_app_id, version, walgo_id, ally_address)

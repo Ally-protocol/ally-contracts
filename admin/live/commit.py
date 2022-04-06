@@ -21,6 +21,7 @@ if __name__ == '__main__':
 
     client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
     app_id = int(os.environ.get("POOL_APP_ID"))
+    walgo_id = int(os.environ.get("WALGO_ID"))
 
     version = 1
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
@@ -40,7 +41,7 @@ if __name__ == '__main__':
         new_redeem_price = int(sys.argv[3])
         new_fee_percent = int(sys.argv[4])
 
-        commit(commit_amount, client, msig, app_id, governance, new_mint_price, new_redeem_price, new_fee_percent)
+        commit(commit_amount, client, msig, app_id, walgo_id, governance, new_mint_price, new_redeem_price, new_fee_percent)
     else:
         print("Invalid argument counts!")
     
