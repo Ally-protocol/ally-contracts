@@ -8,7 +8,7 @@ from ally.utils import send_transaction, wait_for_transaction
 from ally.account import Account
 from algosdk import encoding
 
-def set_governor(client: AlgodClient, sender: Account, app_id: int, governors: List[Account], version: int, multisig_threshold: int):
+def set_governor_M_to_1(client: AlgodClient, sender: Account, app_id: int, governors: List[Account], version: int, multisig_threshold: int):
     msig = transaction.Multisig(
         version, multisig_threshold, [governor.get_address() for governor in governors]
     )
@@ -34,7 +34,7 @@ def set_governor(client: AlgodClient, sender: Account, app_id: int, governors: L
 
     wait_for_transaction(client, tx_id)
 
-def set_multisig_governor(client: AlgodClient, sender: Account, app_id: int, msig: transaction.Multisig):
+def set_governor_1_to_M(client: AlgodClient, sender: Account, app_id: int, msig: transaction.Multisig):
     print('sender address: ', sender.get_address())
 
     txn = transaction.ApplicationCallTxn(

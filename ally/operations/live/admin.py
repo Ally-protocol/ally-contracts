@@ -26,7 +26,7 @@ def set_governor(client: AlgodClient, sender: Account, app_id: int, msig: transa
     mtx = transaction.MultisigTransaction(txn, msig)
     save_mtx_file(mtx)
 
-def set_multisig_governor(client: AlgodClient, sender: Account, app_id: int, msig: transaction.Multisig):
+def set_governor_1_to_M(client: AlgodClient, app_id: int, sender: Account, msig: transaction.Multisig):
     print('sender address: ', sender.get_address())
 
     txn = transaction.ApplicationCallTxn(
@@ -39,6 +39,22 @@ def set_multisig_governor(client: AlgodClient, sender: Account, app_id: int, msi
     )
 
     send_transaction(client, sender, txn)
+
+def set_governor_M_to_M(client: AlgodClient, app_id: int, old_msig: transaction.Multisig, new_msig: transaction.Multisig):
+    print('sender address: ', old_msig.address())
+
+    txn = transaction.ApplicationCallTxn(
+        sender=old_msign.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=[b"set_governor"],
+        accounts=[new_msig.address()],
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    mtx = transaction.MultisigTransaction(txn, old_msig)
+
+    save_mtx_file(mtx)
 
 def toggle_redeem(client: AlgodClient, msig: transaction.Multisig, app_id: int):
     txn = transaction.ApplicationCallTxn(

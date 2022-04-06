@@ -27,18 +27,20 @@ if __name__ == '__main__':
         os.environ.get("ALGOD_API_KEY")
     )
 
-    creator = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))
-
-    app_id = int(os.environ.get("POOL_APP_ID"))
-
     version = 1
+    app_id = int(os.environ.get("POOL_APP_ID"))
     threshold = int(os.environ.get("MULTISIG_THRESHOLD"))
+
+    governor1 = os.environ.get("OLD_GOVERNOR1")
+    governor2 = os.environ.get("OLD_GOVERNOR2")
+    governor3 = os.environ.get("OLD_GOVERNOR3")
+    governors = [governor1, governor2, governor3]
+    old_msig = transaction.Multisig(version, threshold, governors)    
     
     governor1 = os.environ.get("GOVERNOR1")
     governor2 = os.environ.get("GOVERNOR2")
     governor3 = os.environ.get("GOVERNOR3")
     governors = [governor1, governor2, governor3]
-
-    msig = transaction.Multisig(version, threshold, governors)    
+    new_msig = transaction.Multisig(version, threshold, governors)    
     
-    set_multisig_governor(client, creator, app_id, msig)
+    set_governor_M_to_M(client, app_id, old_msig, new_msig)
