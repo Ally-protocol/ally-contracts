@@ -132,6 +132,20 @@ def set_pool_id(pool_id: int, client: AlgodClient, msig: transaction.Multisig, a
     print(f"Sender: {msig.address()}")
     save_mtx_file(mtx)
 
+def distribute(app_id: int, client: AlgodClient, msig: transaction.Multisig, send_to: str, amount: int):
+    txn = transaction.ApplicationCallTxn(
+        sender=msig.address(),
+        sp=client.suggested_params(),
+        index=app_id,
+        app_args=["distribute", amount.to_bytes(8, 'big')],
+        on_complete=transaction.OnComplete.NoOpOC,
+        accounts=[send_to],
+    )
+
+    mtx = transaction.MultisigTransaction(txn, msig)
+
+    print(f"Sender: {msig.address()}")
+    save_mtx_file(mtx)
 
 def set_ally_reward_rate(ally_reward_rate: int, client: AlgodClient, msig: transaction.Multisig, app_id: int):
     txn = transaction.ApplicationCallTxn(

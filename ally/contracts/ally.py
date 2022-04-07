@@ -1,9 +1,9 @@
 import os
 from pyteal import *
 
-TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
+TOTAL_SUPPLY = 1_000_000_000_000_000
 ONE_ALGO = 1_000_000
-TEAL_VERSION = 5
+TEAL_VERSION = 6
 
 # Global State
 governor_key = Bytes("gv")
@@ -19,6 +19,7 @@ action_pool_id = Bytes("set_pool_id")
 action_price = Bytes("set_price")
 action_claim = Bytes("claim")
 action_sell = Bytes("sell")
+action_distribute = Bytes("distribute")
 
 
 def approval():
@@ -142,6 +143,28 @@ def approval():
             Approve(),
         )
 
+    def distribute():
+        contract_address = Global.current_application_address()
+        token = App.globalGet(token_key)
+        balance = AssetHolding.balance(contract_address, token)
+
+        amount = Btoi(Txn.application_args[1])
+        to = Btoi(Txn.accounts[1])
+
+        return Seq(
+            balance,
+            Assert(
+                And(
+                    Txn.sender() == governor,
+                    amount > Int(0),
+                    Txn.type_enum() == TxnType.ApplicationCall,
+                    Txn.assets[0] == token,
+                )
+            ),
+            axfer(to, token, amount),
+            Approve(),
+        )
+
     
     # Function to sell users' ally tokens - user action
     def sell():
@@ -187,6 +210,7 @@ def approval():
             [Txn.application_args[0] == action_pool_id, set_pool_id()],
             [Txn.application_args[0] == action_price, set_price()],
             [Txn.application_args[0] == action_claim, claim()],
+            [Txn.application_args[0] == action_distribute, distribute()],
             [Txn.application_args[0] == action_sell, Reject()], #sell()],
         )
     )

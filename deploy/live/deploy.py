@@ -40,17 +40,6 @@ if __name__ == '__main__':
     funder = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))
     
     msig = transaction.Multisig(1, threshold, [governor.get_address() for governor in governors])
-    
-    if get_balances(client, msig.address())[0] < 6_000_000:
-        pay_txn = transaction.PaymentTxn(
-            sender=funder.get_address(),
-            sp=client.suggested_params(),
-            receiver=msig.address(),
-            amt=6_000_000
-        )
-        signed_pay_txn = pay_txn.sign(funder.get_private_key())
-        client.send_transaction(signed_pay_txn)
-        wait_for_transaction(client, pay_txn.get_txid())
 
     print(f"DEPLOYER: {msig.address()}")
 
@@ -64,7 +53,6 @@ if __name__ == '__main__':
             sender=funder.get_address(),
             sp=client.suggested_params(),
             receiver=get_application_address(app_id),
-            #amt=202_000
             amt=1_001_000
         )
         signed_pay_txn = pay_txn.sign(funder.get_private_key())

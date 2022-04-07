@@ -5,7 +5,7 @@ from pyteal import *
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO = 1_000_000
 INITIAL_FUNDING = ONE_ALGO
-TEAL_VERSION = 5
+TEAL_VERSION = 6
 
 # Global State
 governor_key = Bytes("gv")
@@ -281,7 +281,7 @@ def approval():
                     TxnField.type_enum: TxnType.Payment,
                     TxnField.receiver: Txn.accounts[1],
                     TxnField.amount: Int(0),
-                    #TxnField.note: Txn.application_args[1],
+                    TxnField.note: Txn.application_args[1],
                     TxnField.fee: Int(0),
                 }
             ),
@@ -309,7 +309,7 @@ def approval():
                     TxnField.type_enum: TxnType.Payment,
                     TxnField.receiver: Txn.accounts[1],
                     TxnField.amount: Int(0),
-                    #TxnField.note: Txn.application_args[1],
+                    TxnField.note: Txn.application_args[1],
                 }
             ),
             InnerTxnBuilder.Submit(),
