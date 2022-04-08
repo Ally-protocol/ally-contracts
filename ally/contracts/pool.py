@@ -5,6 +5,7 @@ from pyteal import *
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO = 1_000_000
 INITIAL_FUNDING = ONE_ALGO
+VAULT_COUNT = 10
 TEAL_VERSION = 6
 
 # Global State
@@ -19,10 +20,23 @@ fee_percentage_key = Bytes("fp")
 last_commit_price_key = Bytes("lc")
 max_mint_key = Bytes("mm")
 
+# redeem vault
+redeem_vault1_key = Bytes("rv1")
+redeem_vault2_key = Bytes("rv2")
+redeem_vault3_key = Bytes("rv3")
+redeem_vault4_key = Bytes("rv4")
+redeem_vault5_key = Bytes("rv5")
+redeem_vault6_key = Bytes("rv6")
+redeem_vault7_key = Bytes("rv7")
+redeem_vault8_key = Bytes("rv8")
+redeem_vault9_key = Bytes("rv9")
+redeem_vault10_key = Bytes("rv10")
+
 # Local State
 allys_key = Bytes("allys")
 
 action_governor = Bytes("set_governor")
+action_set_vaults = Bytes("set_vaults")
 action_boot = Bytes("bootstrap")
 action_mint_price = Bytes("set_mint_price")
 action_redeem_price = Bytes("set_redeem_price")
@@ -33,7 +47,6 @@ action_last_commit_price = Bytes("set_last_commit_price")
 action_claim_fee = Bytes("claim_fee")
 action_toggle = Bytes("toggle_redeem")
 action_commit = Bytes("commit")
-action_vote = Bytes("vote")
 action_mint = Bytes("mint")
 action_redeem = Bytes("redeem")
 
@@ -190,6 +203,34 @@ def approval():
             Approve()
         )
 
+    # Function to set a vaults - admin action
+    def set_vaults():
+        vault1 = Txn.accounts[1]
+        vault2 = Txn.accounts[2]
+        vault3 = Txn.accounts[3]
+        vault4 = Txn.accounts[4]
+        vault5 = Txn.accounts[5]
+        vault6 = Txn.accounts[6]
+        vault7 = Txn.accounts[7]
+        vault8 = Txn.accounts[8]
+        vault9 = Txn.accounts[9]
+        vault10 = Txn.accounts[10]
+
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(redeem_vault1_key, vault1),
+            App.globalPut(redeem_vault2_key, vault2),
+            App.globalPut(redeem_vault3_key, vault3),
+            App.globalPut(redeem_vault4_key, vault4),
+            App.globalPut(redeem_vault5_key, vault5),
+            App.globalPut(redeem_vault6_key, vault6),
+            App.globalPut(redeem_vault7_key, vault7),
+            App.globalPut(redeem_vault8_key, vault8),
+            App.globalPut(redeem_vault9_key, vault9),
+            App.globalPut(redeem_vault10_key, vault10),
+            Approve()
+        )
+
     # Function to set a new mint price - admin action
     def set_mint_price():
         new_mint_price = Btoi(Txn.application_args[1])
@@ -263,6 +304,19 @@ def approval():
         new_redeem_price = Btoi(Txn.application_args[4])
         new_fee_percentage = Btoi(Txn.application_args[5])
 
+        vault1 = App.globalGet(redeem_vault1_key)
+        vault2 = App.globalGet(redeem_vault2_key)
+        vault3 = App.globalGet(redeem_vault3_key)
+        vault4 = App.globalGet(redeem_vault4_key)
+        vault5 = App.globalGet(redeem_vault5_key)
+        vault6 = App.globalGet(redeem_vault6_key)
+        vault7 = App.globalGet(redeem_vault7_key)
+        vault8 = App.globalGet(redeem_vault8_key)
+        vault9 = App.globalGet(redeem_vault9_key)
+        vault10 = App.globalGet(redeem_vault10_key)
+
+        sub_commit_algos = WideRatio([committed_algos], VAULT_COUNT)
+
         well_formed_commit = And(
             Global.group_size() == Int(1),
             app_call.type_enum() == TxnType.ApplicationCall,
@@ -275,44 +329,21 @@ def approval():
         
         return Seq(
             Assert(well_formed_commit),
-            InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields(
-                {
-                    TxnField.type_enum: TxnType.Payment,
-                    TxnField.receiver: Txn.accounts[1],
-                    TxnField.amount: Int(0),
-                    TxnField.note: Txn.application_args[1],
-                    TxnField.fee: Int(0),
-                }
-            ),
-            InnerTxnBuilder.Submit(),
             App.globalPut(committed_algos_key, committed_algos),
             App.globalPut(last_commit_price_key, algo_walgo_ratio()),
             App.globalPut(mint_price_key, new_mint_price),
             App.globalPut(redeem_price_key, new_redeem_price),
             App.globalPut(fee_percentage_key, new_fee_percentage),
-            Approve(),
-        )
-
-    def vote():
-        app_call = Gtxn[0]
-        well_formed_vote = And(
-            Global.group_size() == Int(1),
-            app_call.type_enum() == TxnType.ApplicationCall,
-            app_call.sender() == governor,
-        )
-        return Seq(
-            Assert(well_formed_vote),
-            InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields(
-                {
-                    TxnField.type_enum: TxnType.Payment,
-                    TxnField.receiver: Txn.accounts[1],
-                    TxnField.amount: Int(0),
-                    TxnField.note: Txn.application_args[1],
-                }
-            ),
-            InnerTxnBuilder.Submit(),
+            pay(vault1, sub_commit_algos),
+            pay(vault2, sub_commit_algos),
+            pay(vault3, sub_commit_algos),
+            pay(vault4, sub_commit_algos),
+            pay(vault5, sub_commit_algos),
+            pay(vault6, sub_commit_algos),
+            pay(vault7, sub_commit_algos),
+            pay(vault8, sub_commit_algos),
+            pay(vault9, sub_commit_algos),
+            pay(vault10, sub_commit_algos),
             Approve(),
         )
 
@@ -401,6 +432,7 @@ def approval():
         Cond(
             [Txn.application_args[0] == action_boot, bootstrap()],
             [Txn.application_args[0] == action_governor, set_governor()],
+            [Txn.application_args[0] == action_set_vaults, set_vaults()],
             [Txn.application_args[0] == action_mint_price, set_mint_price()],
             [Txn.application_args[0] == action_redeem_price, set_redeem_price()],
             [Txn.application_args[0] == action_ally_reward_rate, set_ally_reward_rate()],
@@ -410,7 +442,6 @@ def approval():
             [Txn.application_args[0] == action_claim_fee, claim_fee()],
             [Txn.application_args[0] == action_toggle, toggle_redeem()],
             [Txn.application_args[0] == action_commit, commit()],
-            [Txn.application_args[0] == action_vote, vote()],
             [Txn.application_args[0] == action_mint, mint()],
             [Txn.application_args[0] == action_redeem, redeem()],
         )
