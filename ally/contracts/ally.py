@@ -3,6 +3,7 @@ from pyteal import *
 
 TOTAL_SUPPLY = 1_000_000_000_000_000
 ONE_ALGO = 1_000_000
+PRECISION = 1_000_000
 TEAL_VERSION = 6
 
 # Global State
@@ -21,6 +22,7 @@ action_price = Bytes("set_price")
 action_claim = Bytes("claim")
 action_sell = Bytes("sell")
 action_distribute = Bytes("distribute")
+action_governor = Bytes("set_governor")
 
 
 def approval():
@@ -30,8 +32,8 @@ def approval():
     @Subroutine(TealType.uint64)
     def algos_to_pay(ally_amount):
         algos = WideRatio(
-            [App.globalGet(price_key), ally_amount],
-            [Int(ONE_ALGO)]
+            [App.globalGet(price_key), ally_amount, Int(PRECISION)],
+            [Int(ONE_ALGO), Int(PRECISION)]
         )
         return Seq(
             Return(algos)
@@ -145,13 +147,23 @@ def approval():
             Approve(),
         )
 
+    # Function to set a new governor - admin action
+    def set_governor():
+        new_governor = Txn.accounts[1]
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(governor_key, new_governor),
+            Approve()
+        )
+
+
     def distribute():
         contract_address = Global.current_application_address()
         token = App.globalGet(token_key)
         balance = AssetHolding.balance(contract_address, token)
 
+        address_to = Txn.accounts[1]
         amount = Btoi(Txn.application_args[1])
-        to = Btoi(Txn.accounts[1])
 
         return Seq(
             balance,
@@ -163,7 +175,7 @@ def approval():
                     Txn.assets[0] == token,
                 )
             ),
-            axfer(to, token, amount),
+            axfer(address_to, token, amount),
             Approve(),
         )
 
@@ -190,7 +202,7 @@ def approval():
             balance,
             pay(
                 asset_xfer.sender(),
-                algos_to_pay(asset_xfer.asset_amount())
+                algos_to_pay(asset_xfer.asset_amount()) - Int(FEE)
             ),
             Approve(),
         )
@@ -214,6 +226,7 @@ def approval():
             [Txn.application_args[0] == action_price, set_price()],
             [Txn.application_args[0] == action_claim, claim()],
             [Txn.application_args[0] == action_distribute, distribute()],
+            [Txn.application_args[0] == action_governor, set_governor()],
             [Txn.application_args[0] == action_sell, Reject()], #sell()],
         )
     )

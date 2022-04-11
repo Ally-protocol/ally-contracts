@@ -5,6 +5,8 @@ from pyteal import *
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO = 1_000_000
 INITIAL_FUNDING = ONE_ALGO
+PRECISION = 1_000_000
+FEE = 1_000
 TEAL_VERSION = 6
 
 # Global State
@@ -46,8 +48,8 @@ def approval():
     @Subroutine(TealType.uint64)
     def walgos_to_mint(algos):
         amount = WideRatio(
-            [Int(ONE_ALGO), algos],
-            [App.globalGet(mint_price_key)]
+            [Int(ONE_ALGO), algos, Int(PRECISION)],
+            [App.globalGet(mint_price_key), Int(PRECISION)]
         )
         return Seq(
             Return(amount)
@@ -57,8 +59,8 @@ def approval():
     @Subroutine(TealType.uint64)
     def algos_to_redeem(amount):
         algos = WideRatio(
-            [App.globalGet(redeem_price_key), amount],
-            [Int(ONE_ALGO)]
+            [App.globalGet(redeem_price_key), amount, Int(PRECISION)],
+            [Int(ONE_ALGO), Int(PRECISION)]
         )
         return Seq(
             Return(algos)
@@ -68,8 +70,8 @@ def approval():
     @Subroutine(TealType.uint64)
     def allys_to_reward(amount):
         allys = WideRatio(
-            [App.globalGet(ally_reward_rate_key), amount],
-            [Int(ONE_ALGO)]
+            [App.globalGet(ally_reward_rate_key), amount, Int(PRECISION)],
+            [Int(ONE_ALGO), Int(PRECISION)]
         )
         return Seq(
             Return(allys)
@@ -89,8 +91,8 @@ def approval():
                 Int(TOTAL_SUPPLY) > pool_balance.value(),
                 Return(
                     WideRatio(
-                        [algo_balance - Int(INITIAL_FUNDING), Int(ONE_ALGO)],
-                        [Int(TOTAL_SUPPLY) - pool_balance.value()]
+                        [algo_balance - Int(INITIAL_FUNDING), Int(ONE_ALGO), Int(PRECISION)],
+                        [Int(TOTAL_SUPPLY) - pool_balance.value(), Int(PRECISION)]
                     )
                 ),
                 Return(
@@ -124,7 +126,7 @@ def approval():
                 {
                     TxnField.type_enum: TxnType.Payment,
                     TxnField.amount: amount,
-                    TxnField.receiver: receiver
+                    TxnField.receiver: receiver,
                 }
             ),
             InnerTxnBuilder.Submit(),
@@ -167,8 +169,8 @@ def approval():
         fee_percentage = App.globalGet(fee_percentage_key)
         last_commit_price = App.globalGet(last_commit_price_key)
         amount = WideRatio(
-            [fee_percentage, algo_balance, current_ratio - last_commit_price],
-            [Int(ONE_ALGO), Int(100)]
+            [fee_percentage, algo_balance, current_ratio - last_commit_price, Int(PRECISION)],
+            [Int(ONE_ALGO), Int(100), Int(PRECISION)]
         )
 
         return Seq(
@@ -325,7 +327,7 @@ def approval():
         app_call = Gtxn[0]
         payment = Gtxn[1]
         # calculates the walgos amount
-        walgos_amount = walgos_to_mint(payment.amount() - Int(1_000)) # TODO use payment.fee()
+        walgos_amount = walgos_to_mint(payment.amount() - Int(FEE))
         # calculates ally reward
         ally_amount = allys_to_reward(walgos_amount)
         ally_reward = ally_amount + App.localGet(Int(0), allys_key)
@@ -340,8 +342,8 @@ def approval():
                     payment.type_enum() == TxnType.Payment,
                     payment.sender() == app_call.sender(),
                     payment.receiver() == contract_address,
-                    payment.amount() > Int(1_000),
-                    payment.amount() <= App.globalGet(max_mint_key) + Int(1_000),
+                    payment.amount() > Int(FEE),
+                    payment.amount() <= App.globalGet(max_mint_key) + Int(FEE),
                 )
             ),
             axfer(
@@ -377,7 +379,7 @@ def approval():
             pool_balance,
             pay(
                 asset_xfer.sender(),
-                algos_to_redeem(asset_xfer.asset_amount())
+                algos_to_redeem(asset_xfer.asset_amount()) - Int(FEE)
             ),
             Approve(),
         )
