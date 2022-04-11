@@ -10,6 +10,7 @@ governor_key = Bytes("gv")
 token_key = Bytes("tk")
 pool_id_key = Bytes("pl")
 price_key = Bytes("pc")
+claimed_allys_key = Bytes("ca")
 
 # Local State
 allys_key = Bytes("allys")
@@ -139,6 +140,7 @@ def approval():
                 token,
                 ally_rewards.value() - ally_claimed
             ),
+            App.globalPut(claimed_allys_key, App.globalGet(claimed_allys_key) + (ally_rewards.value() - ally_claimed)),
             App.localPut(Int(0), allys_key, ally_rewards.value()),
             Approve(),
         )
@@ -197,6 +199,7 @@ def approval():
     handle_creation = Seq(
         App.globalPut(governor_key, Txn.sender()),
         App.globalPut(price_key, Int(ONE_ALGO)),
+        App.globalPut(claimed_allys_key, Int(0)),
         Approve()
     )
 

@@ -18,6 +18,7 @@ ally_reward_rate_key = Bytes("rr")
 fee_percentage_key = Bytes("fp")
 last_commit_price_key = Bytes("lc")
 max_mint_key = Bytes("mm")
+promised_allys_key = Bytes("pa")
 
 # Local State
 allys_key = Bytes("allys")
@@ -328,6 +329,7 @@ def approval():
         # calculates ally reward
         ally_amount = allys_to_reward(walgos_amount)
         ally_reward = ally_amount + App.localGet(Int(0), allys_key)
+        promised_allys = ally_amount + App.globalGet(promised_allys_key)
         return Seq(
             pool_balance,
             Assert(
@@ -347,6 +349,7 @@ def approval():
                 pool_token,
                 walgos_amount
             ),
+            App.globalPut(promised_allys_key, promised_allys),
             App.localPut(Int(0), allys_key, ally_reward),
             Approve(),
         )
@@ -383,12 +386,13 @@ def approval():
     handle_creation = Seq(
         App.globalPut(mint_price_key, Int(ONE_ALGO)),
         App.globalPut(redeem_price_key, Int(ONE_ALGO)),
-        App.globalPut(ally_reward_rate_key, Int(ONE_ALGO)),
         App.globalPut(last_commit_price_key, Int(ONE_ALGO)),
         App.globalPut(fee_percentage_key, Int(10)),
         App.globalPut(max_mint_key, Int(10_000_000)),
         App.globalPut(allow_redeem_key, Int(1)),
+        App.globalPut(ally_reward_rate_key, Int(0)),
         App.globalPut(committed_algos_key, Int(0)),
+        App.globalPut(promised_allys_key, Int(0)),
         App.globalPut(governor_key, Txn.sender()),
         Approve()
     )
