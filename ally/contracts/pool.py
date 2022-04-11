@@ -181,6 +181,7 @@ def approval():
             pay(ally_address, amount),
             App.globalPut(mint_price_key, algo_walgo_ratio()),
             App.globalPut(redeem_price_key, algo_walgo_ratio()),
+            App.globalPut(ally_reward_rate_key, Int(0)),
             Approve()
         )
 
