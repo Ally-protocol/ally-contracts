@@ -23,7 +23,7 @@ if __name__ == '__main__':
     dotenv.load_dotenv(".env")
 
     if(len(sys.argv) < 2):
-        print("available contracts: [pool | ally]")
+        print("available contracts: [pool | ally | vault]")
         exit(0)
     else:
         contract = sys.argv[1]
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     print(f"APP ID: {app_id}")
     print(f"APP ADDRESS: {get_application_address(app_id)}")
 
-    if get_balances(client, get_application_address(app_id))[0] < 300_000:
+    if ((get_balances(client, get_application_address(app_id))[0] < 300_000) and (contract != "vault")):
         pay_txn = transaction.PaymentTxn(
             sender=funder.get_address(),
             sp=client.suggested_params(),
@@ -47,8 +47,7 @@ if __name__ == '__main__':
         client.send_transaction(signed_pay_txn)
         wait_for_transaction(client, pay_txn.get_txid())
     
-    bootstrap(client, funder, app_id)
-    
-    state = get_app_global_state(client, app_id)
-    
-    print("Global State: ", state)
+    if contract != "vault":
+        bootstrap(client, funder, app_id)    
+        state = get_app_global_state(client, app_id)
+        print("Global State: ", state)

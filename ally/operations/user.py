@@ -78,6 +78,32 @@ def redeem_walgo(client: AlgodClient, sender: Account, app_id: int, asset_id: in
 
     wait_for_transaction(client, tx_id)
 
+def redeem_vault(client: AlgodClient, sender: Account, pool_id: int, vault_id: int, asset_id: int, amount: int):
+    call_txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=client.suggested_params(),
+        index=vault_id,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"redeem"],
+        foreign_assets=[asset_id]
+    )
+    axfer_txn = transaction.AssetTransferTxn(
+        sender=sender.get_address(),
+        sp=client.suggested_params(),
+        receiver=get_application_address(pool_id),
+        amt=amount,
+        index=asset_id
+    )
+
+    transaction.assign_group_id([call_txn, axfer_txn])
+
+    signed_call_txn = call_txn.sign(sender.get_private_key())
+    signed_axfer_txn = axfer_txn.sign(sender.get_private_key())
+
+    tx_id = client.send_transactions([signed_call_txn, signed_axfer_txn])
+
+    wait_for_transaction(client, tx_id)
+
 
 def claim_ally(client: AlgodClient, sender: Account, app_id: int, asset_id: int, pool_app_id: int):
     if not is_opted_in_contract(client, app_id, sender.get_address()):

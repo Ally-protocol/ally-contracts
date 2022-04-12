@@ -3,8 +3,8 @@ import os
 from pyteal import *
 
 ONE_ALGO = 1_000_000
-INITIAL_FUNDING = ONE_ALGO
-TEAL_VERSION = 6
+MIN_BALANCE = 110_000
+TEAL_VERSION = 5
 
 # Global State
 governor_key = Bytes("gv")
@@ -50,7 +50,6 @@ def approval():
         )
 
     # Function to send whole ALGO back to pool app
-    @Subroutine(TealType.none)
     def release():
         contract_address = Global.current_application_address()
         pool_address = App.globalGet(pool_address_key)
@@ -58,10 +57,10 @@ def approval():
 
         return Seq(
             Assert(Txn.sender() == governor),
-            Assert(algo_balance > Int(1_000)),
+            Assert(algo_balance > Int(MIN_BALANCE)),
             pay(
                 pool_address,
-                algo_balance - Int(1_000)
+                algo_balance - Int(MIN_BALANCE)
             ),
             App.globalPut(allow_redeem_key, Int(0)),
             Approve(),
@@ -96,7 +95,6 @@ def approval():
                     TxnField.receiver: Txn.accounts[1],
                     TxnField.amount: Int(0),
                     TxnField.note: Txn.application_args[1],
-                    TxnField.fee: Int(0),
                 }
             ),
             InnerTxnBuilder.Submit(),
@@ -163,8 +161,9 @@ def approval():
         App.globalPut(governor_key, Txn.sender()),
         App.globalPut(committed_algos_key, Int(0)),
         App.globalPut(allow_redeem_key, Int(0)),
+        App.globalPut(redeem_price_key, Int(ONE_ALGO)),
         App.globalPut(pool_address_key, Txn.accounts[1]),
-        App.globalPut(pool_token_key, Btoi(Txn.application_args[1])),
+        App.globalPut(pool_token_key, Btoi(Txn.application_args[0])),
         Approve()
     )
 
@@ -197,10 +196,10 @@ def clear():
     return Approve()
 
 # Compiling functions
-def pool_approval_src():
+def vault_approval_src():
     return compileTeal(approval(), mode=Mode.Application, version=TEAL_VERSION)
 
-def pool_clear_src():
+def vault_clear_src():
     return compileTeal(clear(), mode=Mode.Application, version=TEAL_VERSION)
 
 # When executing this file, compile this PyTeal into TEAL
@@ -208,7 +207,7 @@ if __name__ == "__main__":
     path = os.path.dirname(os.path.abspath(__file__))
 
     with open(os.path.join(path, "approval.teal"), "w") as f:
-        f.write(pool_approval_src())
+        f.write(vault_approval_src())
 
     with open(os.path.join(path, "clear.teal"), "w") as f:
-        f.write(pool_clear_src())
+        f.write(vault_clear_src())

@@ -1,3 +1,6 @@
+import os
+import dotenv
+
 import random
 from base64 import b64decode
 from algosdk.v2client.algod import AlgodClient
@@ -7,6 +10,7 @@ from ally.utils import wait_for_transaction, send_transaction
 from ally.account import Account
 from ally.contracts.pool import pool_approval_src, pool_clear_src
 from ally.contracts.ally import ally_approval_src, ally_clear_src
+from ally.contracts.vault import vault_approval_src, vault_clear_src
 
 def create(contract: str, client: AlgodClient, funder: Account):
 
@@ -18,21 +22,42 @@ def create(contract: str, client: AlgodClient, funder: Account):
         app_result = client.compile(ally_approval_src())
         clear_result = client.compile(ally_clear_src())
 
+    if(contract == "vault"):
+        app_result = client.compile(vault_approval_src())
+        clear_result = client.compile(vault_clear_src())
+
     app_bytes = b64decode(app_result["result"])
     clear_bytes = b64decode(clear_result["result"])
 
     global_schema = transaction.StateSchema(num_uints=32, num_byte_slices=32)
     local_schema = transaction.StateSchema(num_uints=8, num_byte_slices=8)
 
-    txn = transaction.ApplicationCreateTxn(
-        sender=funder.get_address(),
-        sp=client.suggested_params(),
-        on_complete=transaction.OnComplete.NoOpOC,
-        approval_program=app_bytes,
-        clear_program=clear_bytes,
-        global_schema=global_schema,
-        local_schema=local_schema,
-    )
+    if(contract != "vault"):
+        txn = transaction.ApplicationCreateTxn(
+            sender=funder.get_address(),
+            sp=client.suggested_params(),
+            on_complete=transaction.OnComplete.NoOpOC,
+            approval_program=app_bytes,
+            clear_program=clear_bytes,
+            global_schema=global_schema,
+            local_schema=local_schema,
+        )
+    else:
+        dotenv.load_dotenv('.env')
+        pool_address = os.environ.get("POOL_APP_ADDRESS")
+        walgo_id = int(os.environ.get("WALGO_ID"))
+
+        txn = transaction.ApplicationCreateTxn(
+            sender=funder.get_address(),
+            sp=client.suggested_params(),
+            on_complete=transaction.OnComplete.NoOpOC,
+            app_args=[walgo_id],
+            accounts=[pool_address],
+            approval_program=app_bytes,
+            clear_program=clear_bytes,
+            global_schema=global_schema,
+            local_schema=local_schema,
+        )
 
     signed_txn = txn.sign(funder.get_private_key())
     tx_id = client.send_transaction(signed_txn)

@@ -1,4 +1,5 @@
 import random
+import json
 
 from algosdk.v2client.algod import AlgodClient
 from algosdk.future import transaction
@@ -169,4 +170,90 @@ def claim_fee(client: AlgodClient, sender: Account, app_id: int, asset_id: int, 
         foreign_assets=[asset_id]
     )
     
+    send_transaction(client, sender, txn)
+
+def set_vaults(client: AlgodClient, sender: Account, vaults: List[str], app_id: int, group_arg: str):
+    params = client.suggested_params()
+
+    txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=params,
+        index=app_id,
+        app_args=["set_vaults", group_arg],
+        accounts=vaults,
+        on_complete=transaction.OnComplete.NoOpOC
+    )
+
+    send_transaction(client, sender, txn)
+
+def distribute_vault(commit_amount: int, client: AlgodClient, vaults: List[str], group_arg: str, sender: Account, app_id: int, asset_id: int):
+    params = client.suggested_params()
+
+    txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=params,
+        index=app_id,
+        app_args=["distribute_algo", commit_amount, group_arg],
+        accounts=vaults,
+        on_complete=transaction.OnComplete.NoOpOC,
+        foreign_assets=[asset_id]
+    )
+
+    send_transaction(client, sender, txn)
+
+def commit(client: AlgodClient, sender: Account, app_id: int, new_mint_price: int, new_redeem_price: int, new_fee_percent: int):
+    params = client.suggested_params()
+
+    txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=params,
+        index=app_id,
+        app_args=["commit", new_mint_price, new_redeem_price, new_fee_percent],
+        on_complete=transaction.OnComplete.NoOpOC,
+    )
+
+    send_transaction(client, sender, txn)
+
+def commit_vault(commit_amount: int, client: AlgodClient, sender: Account, app_id: int, asset_id: int, governance: str, new_redeem_price: int):
+    params = client.suggested_params()
+
+    txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=params,
+        index=app_id,
+        app_args=["commit", "af/gov1:j" + json.dumps({"com": commit_amount}), commit_amount, new_redeem_price],
+        accounts=[governance],
+        foreign_assets=[asset_id],
+        on_complete=transaction.OnComplete.NoOpOC,
+    )
+
+    send_transaction(client, sender, txn)
+
+def vote_vault(client: AlgodClient, sender: Account, app_id: int, asset_id: int, governance: str):
+    params = client.suggested_params()
+
+    txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=params,
+        index=app_id,
+        app_args=["vote", 'af/gov1:j[5: "a"]'],
+        accounts=[governance],
+        foreign_assets=[asset_id],
+        on_complete=transaction.OnComplete.NoOpOC,
+    )
+
+    send_transaction(client, sender, txn)
+
+def release_vault(client: AlgodClient, sender: Account, pool_address: str, app_id: int):
+    params = client.suggested_params()
+
+    txn = transaction.ApplicationCallTxn(
+        sender=sender.get_address(),
+        sp=params,
+        index=app_id,
+        app_args=["release"],
+        accounts=[pool_address],
+        on_complete=transaction.OnComplete.NoOpOC,
+    )
+
     send_transaction(client, sender, txn)

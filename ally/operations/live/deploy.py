@@ -10,6 +10,7 @@ from ally.utils import wait_for_transaction
 from ally.account import Account
 from ally.contracts.pool import pool_approval_src, pool_clear_src
 from ally.contracts.ally import ally_approval_src, ally_clear_src
+from ally.contracts.vault import vault_approval_src, vault_clear_src
 
 def create(contract: str, client: AlgodClient, governors: List[Account], multisig_threshold: int):
 
@@ -20,6 +21,10 @@ def create(contract: str, client: AlgodClient, governors: List[Account], multisi
     if(contract == "ally"):
         app_result = client.compile(ally_approval_src())
         clear_result = client.compile(ally_clear_src())
+
+    if(contract == "vault"):
+        app_result = client.compile(vault_approval_src())
+        clear_result = client.compile(vault_clear_src())
 
     app_bytes = b64decode(app_result["result"])
     clear_bytes = b64decode(clear_result["result"])

@@ -59,8 +59,7 @@ if __name__ == '__main__':
         client.send_transaction(signed_pay_txn)
         wait_for_transaction(client, pay_txn.get_txid())
     
-    bootstrap(client, governors, threshold, app_id)
-    
-    state = get_app_global_state(client, app_id)
-    
-    print("Global State: ", state)
+    if contract != "vault":
+        bootstrap(client, governors, threshold, app_id)
+        state = get_app_global_state(client, app_id)
+        print("Global State: ", state)
