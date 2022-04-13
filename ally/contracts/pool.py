@@ -348,6 +348,9 @@ def approval():
             pool_balance,
             Assert(
                 And(
+                    payment.close_remainder_to() == Global.zero_address(),
+                    payment.asset_close_to() == Global.zero_address(),
+                    payment.rekey_to() == Global.zero_address(),
                     Global.group_size() == Int(2),  # App call, Payment to mint
                     app_call.type_enum() == TxnType.ApplicationCall,
                     app_call.assets[0] == pool_token,
@@ -379,6 +382,9 @@ def approval():
             Assert(App.globalGet(allow_redeem_key)),
             Assert(
                 And(
+                    asset_xfer.close_remainder_to() == Global.zero_address(),
+                    asset_xfer.asset_close_to() == Global.zero_address(),
+                    asset_xfer.rekey_to() == Global.zero_address(),
                     Global.group_size() == Int(2),
                     app_call.type_enum() == TxnType.ApplicationCall,
                     app_call.assets[0] == pool_token,
