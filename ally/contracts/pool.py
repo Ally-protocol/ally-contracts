@@ -4,7 +4,6 @@ from pyteal import *
 
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO = 1_000_000
-INITIAL_FUNDING = ONE_ALGO
 PRECISION = 1_000_000
 FEE = 1_000
 TEAL_VERSION = 6
@@ -37,6 +36,7 @@ action_claim_fee = Bytes("claim_fee")
 action_toggle = Bytes("toggle_redeem")
 action_commit = Bytes("commit")
 action_vote = Bytes("vote")
+action_flush = Bytes("flush")
 action_mint = Bytes("mint")
 action_redeem = Bytes("redeem")
 
@@ -91,7 +91,7 @@ def approval():
                 Int(TOTAL_SUPPLY) > pool_balance.value(),
                 Return(
                     WideRatio(
-                        [algo_balance - Int(INITIAL_FUNDING), Int(ONE_ALGO), Int(PRECISION)],
+                        [algo_balance, Int(ONE_ALGO), Int(PRECISION)],
                         [Int(TOTAL_SUPPLY) - pool_balance.value(), Int(PRECISION)]
                     )
                 ),
@@ -185,6 +185,17 @@ def approval():
             Approve()
         )
 
+    def flush():
+        address_to = Txn.accounts[1]
+        amount = Btoi(Txn.application_args[1])
+
+        return Seq(
+            Assert(Txn.sender() == governor),
+            Assert(amount > Int(0)),
+            pay(address_to, amount),
+            Approve()
+        )
+
     # Function to set a new governor - admin action
     def set_governor():
         new_governor = Txn.accounts[1]
@@ -271,8 +282,8 @@ def approval():
             Global.group_size() == Int(1),
             app_call.type_enum() == TxnType.ApplicationCall,
             app_call.sender() == governor,
-            new_mint_price > algo_walgo_ratio(),
-            new_redeem_price < algo_walgo_ratio(),
+            new_mint_price >= algo_walgo_ratio(),
+            new_redeem_price <= algo_walgo_ratio(),
             new_fee_percentage > Int(0),
             new_fee_percentage <= Int(30),
         )
@@ -418,6 +429,7 @@ def approval():
             [Txn.application_args[0] == action_toggle, toggle_redeem()],
             [Txn.application_args[0] == action_commit, commit()],
             [Txn.application_args[0] == action_vote, vote()],
+            [Txn.application_args[0] == action_flush, flush()],
             [Txn.application_args[0] == action_mint, mint()],
             [Txn.application_args[0] == action_redeem, redeem()],
         )
