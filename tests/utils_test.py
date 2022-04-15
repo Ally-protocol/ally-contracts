@@ -1,10 +1,8 @@
 import os
 import dotenv
-import base64
 
 from algosdk.v2client.algod import AlgodClient
 from algosdk.kmd import KMDClient
-from algosdk import encoding
 
 from ally.utils import get_algod_client, get_kmd_client, get_genesis_accounts
 

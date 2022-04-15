@@ -3,7 +3,7 @@ from pyteal import *
 
 TOTAL_SUPPLY = 1_000_000_000_000_000
 ONE_ALGO = 1_000_000
-TEAL_VERSION = 6
+TEAL_VERSION = 5
 
 # Global State
 governor_key = Bytes("gv")
@@ -15,6 +15,7 @@ price_key = Bytes("pc")
 allys_key = Bytes("allys")
 
 action_boot = Bytes("bootstrap")
+action_governor = Bytes("set_governor")
 action_pool_id = Bytes("set_pool_id")
 action_price = Bytes("set_price")
 action_claim = Bytes("claim")
@@ -92,6 +93,15 @@ def approval():
             # Write it to global state
             App.globalPut(token_key, InnerTxn.created_asset_id()),
             Approve(),
+        )
+
+    # Function to set a new governor - admin action
+    def set_governor():
+        new_governor = Txn.accounts[1]
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(governor_key, new_governor),
+            Approve()
         )
 
     # Function to set the pool id - admin action
@@ -207,6 +217,7 @@ def approval():
         Assert(Txn.rekey_to() == Global.zero_address()),
         Cond(
             [Txn.application_args[0] == action_boot, bootstrap()],
+            [Txn.application_args[0] == action_governor, set_governor()],
             [Txn.application_args[0] == action_pool_id, set_pool_id()],
             [Txn.application_args[0] == action_price, set_price()],
             [Txn.application_args[0] == action_claim, claim()],
