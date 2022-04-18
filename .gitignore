@@ -1,5 +1,6 @@
 ally/operations/live/tx_files/
 venv/
+env/
 .env
 .env.main
 .env.test
