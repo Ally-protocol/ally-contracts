@@ -6,7 +6,6 @@ TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO = 1_000_000
 PRECISION = 1_000_000
 
-INITIAL_FUNDING = ONE_ALGO
 GROUP_COUNT = Int(4)
 
 FEE = 1_000
@@ -112,7 +111,7 @@ def approval():
                 Int(TOTAL_SUPPLY) > pool_balance.value(),
                 Return(
                     WideRatio(
-                        [algo_balance - Int(INITIAL_FUNDING), Int(PRECISION)],
+                        [algo_balance, Int(PRECISION)],
                         [Int(TOTAL_SUPPLY) - pool_balance.value()]
                     )
                 ),
@@ -459,9 +458,9 @@ def approval():
 
     # Initialize the Global State on creation
     handle_creation = Seq(
-        App.globalPut(mint_price_key, Int(PRECISION)),
-        App.globalPut(redeem_price_key, Int(PRECISION)),
-        App.globalPut(last_commit_price_key, Int(PRECISION)),
+        App.globalPut(mint_price_key, Int(ONE_ALGO)),
+        App.globalPut(redeem_price_key, Int(ONE_ALGO)),
+        App.globalPut(last_commit_price_key, Int(ONE_ALGO)),
         App.globalPut(fee_percentage_key, Int(10)),
         App.globalPut(max_mint_key, Int(10_000_000)),
         App.globalPut(allow_redeem_key, Int(1)),
