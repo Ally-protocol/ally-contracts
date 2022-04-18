@@ -5,9 +5,12 @@ from pyteal import *
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO = 1_000_000
 PRECISION = 1_000_000
+
 INITIAL_FUNDING = ONE_ALGO
 GROUP_COUNT = Int(4)
-TEAL_VERSION = 5
+
+FEE = 1_000
+TEAL_VERSION = 6
 
 # Global State
 governor_key = Bytes("gv")
@@ -20,6 +23,7 @@ ally_reward_rate_key = Bytes("rr")
 fee_percentage_key = Bytes("fp")
 last_commit_price_key = Bytes("lc")
 max_mint_key = Bytes("mm")
+promised_allys_key = Bytes("pa")
 
 # redeem vault
 redeem_vault1_key = Bytes("rv1")
@@ -198,6 +202,7 @@ def approval():
             pay(ally_address, amount),
             App.globalPut(mint_price_key, algo_walgo_ratio()),
             App.globalPut(redeem_price_key, algo_walgo_ratio()),
+            App.globalPut(ally_reward_rate_key, Int(0)),
             Approve()
         )
 
@@ -371,8 +376,8 @@ def approval():
             Global.group_size() == Int(1),
             app_call.type_enum() == TxnType.ApplicationCall,
             app_call.sender() == governor,
-            new_mint_price > algo_walgo_ratio(),
-            new_redeem_price < algo_walgo_ratio(),
+            new_mint_price >= algo_walgo_ratio(),
+            new_redeem_price <= algo_walgo_ratio(),
             new_fee_percentage > Int(0),
             new_fee_percentage <= Int(30),
         )
@@ -395,10 +400,11 @@ def approval():
         app_call = Gtxn[0]
         payment = Gtxn[1]
         # calculates the walgos amount
-        walgos_amount = walgos_to_mint(payment.amount() - Int(1_000)) # TODO use payment.fee()
+        walgos_amount = walgos_to_mint(payment.amount() - Int(FEE))
         # calculates ally reward
         ally_amount = allys_to_reward(walgos_amount)
         ally_reward = ally_amount + App.localGet(Int(0), allys_key)
+        promised_allys = ally_amount + App.globalGet(promised_allys_key)
         return Seq(
             pool_balance,
             Assert(
@@ -409,8 +415,8 @@ def approval():
                     payment.type_enum() == TxnType.Payment,
                     payment.sender() == app_call.sender(),
                     payment.receiver() == contract_address,
-                    payment.amount() > Int(1_000),
-                    payment.amount() <= App.globalGet(max_mint_key) + Int(1_000),
+                    payment.amount() > Int(FEE),
+                    payment.amount() <= App.globalGet(max_mint_key) + Int(FEE),
                 )
             ),
             axfer(
@@ -418,6 +424,7 @@ def approval():
                 pool_token,
                 walgos_amount
             ),
+            App.globalPut(promised_allys_key, promised_allys),
             App.localPut(Int(0), allys_key, ally_reward),
             Approve(),
         )
@@ -445,7 +452,7 @@ def approval():
             pool_balance,
             pay(
                 asset_xfer.sender(),
-                algos_to_redeem(asset_xfer.asset_amount())
+                algos_to_redeem(asset_xfer.asset_amount()) - Int(FEE)
             ),
             Approve(),
         )
@@ -454,12 +461,13 @@ def approval():
     handle_creation = Seq(
         App.globalPut(mint_price_key, Int(PRECISION)),
         App.globalPut(redeem_price_key, Int(PRECISION)),
-        App.globalPut(ally_reward_rate_key, Int(PRECISION)),
         App.globalPut(last_commit_price_key, Int(PRECISION)),
         App.globalPut(fee_percentage_key, Int(10)),
         App.globalPut(max_mint_key, Int(10_000_000)),
         App.globalPut(allow_redeem_key, Int(1)),
+        App.globalPut(ally_reward_rate_key, Int(0)),
         App.globalPut(committed_algos_key, Int(0)),
+        App.globalPut(promised_allys_key, Int(0)),
         App.globalPut(governor_key, Txn.sender()),
         Approve()
     )

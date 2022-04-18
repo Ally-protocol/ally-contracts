@@ -43,7 +43,7 @@ def test_redeem():
     print(f"mint price: {mint_price}")
 
     assert current_walgo == 0
-    assert current_algo == previous_algo - FEE * 2 + expected_redeem_algo
+    assert current_algo == previous_algo - FEE * 3 + expected_redeem_algo
 
 def test_disabled_redeem():
     minter = env.minter

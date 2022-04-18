@@ -3,13 +3,15 @@ from pyteal import *
 
 TOTAL_SUPPLY = 1_000_000_000_000_000
 ONE_ALGO = 1_000_000
-TEAL_VERSION = 5
+TEAL_VERSION = 6
+FEE = 1_000
 
 # Global State
 governor_key = Bytes("gv")
 token_key = Bytes("tk")
 pool_id_key = Bytes("pl")
 price_key = Bytes("pc")
+claimed_allys_key = Bytes("ca")
 
 # Local State
 allys_key = Bytes("allys")
@@ -21,6 +23,7 @@ action_price = Bytes("set_price")
 action_claim = Bytes("claim")
 action_sell = Bytes("sell")
 action_distribute = Bytes("distribute")
+action_governor = Bytes("set_governor")
 
 
 def approval():
@@ -149,17 +152,28 @@ def approval():
                 token,
                 ally_rewards.value() - ally_claimed
             ),
+            App.globalPut(claimed_allys_key, App.globalGet(claimed_allys_key) + (ally_rewards.value() - ally_claimed)),
             App.localPut(Int(0), allys_key, ally_rewards.value()),
             Approve(),
         )
+
+    # Function to set a new governor - admin action
+    def set_governor():
+        new_governor = Txn.accounts[1]
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(governor_key, new_governor),
+            Approve()
+        )
+
 
     def distribute():
         contract_address = Global.current_application_address()
         token = App.globalGet(token_key)
         balance = AssetHolding.balance(contract_address, token)
 
+        address_to = Txn.accounts[1]
         amount = Btoi(Txn.application_args[1])
-        to = Btoi(Txn.accounts[1])
 
         return Seq(
             balance,
@@ -171,7 +185,7 @@ def approval():
                     Txn.assets[0] == token,
                 )
             ),
-            axfer(to, token, amount),
+            axfer(address_to, token, amount),
             Approve(),
         )
 
@@ -198,7 +212,7 @@ def approval():
             balance,
             pay(
                 asset_xfer.sender(),
-                algos_to_pay(asset_xfer.asset_amount())
+                algos_to_pay(asset_xfer.asset_amount()) - Int(FEE)
             ),
             Approve(),
         )
@@ -207,6 +221,7 @@ def approval():
     handle_creation = Seq(
         App.globalPut(governor_key, Txn.sender()),
         App.globalPut(price_key, Int(ONE_ALGO)),
+        App.globalPut(claimed_allys_key, Int(0)),
         Approve()
     )
 
@@ -222,6 +237,7 @@ def approval():
             [Txn.application_args[0] == action_price, set_price()],
             [Txn.application_args[0] == action_claim, claim()],
             [Txn.application_args[0] == action_distribute, distribute()],
+            [Txn.application_args[0] == action_governor, set_governor()],
             [Txn.application_args[0] == action_sell, Reject()], #sell()],
         )
     )
