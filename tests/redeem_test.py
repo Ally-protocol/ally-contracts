@@ -38,7 +38,7 @@ def test_redeem():
     current_algo  = balances[0]
     current_walgo = balances[env.walgo_asa_id]
 
-    expected_redeem_algo = int((previous_walgo * redeem_price) / PRECISION)
+    expected_redeem_algo = int(float((previous_walgo * redeem_price) / PRECISION))
     print(f"redeem price: {redeem_price}")
     print(f"mint price: {mint_price}")
 
