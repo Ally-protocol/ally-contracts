@@ -6,9 +6,16 @@ from algosdk.future import transaction
 from ally.utils import get_algod_client
 from .account import Account
 
+
 class Env:
     def __init__(self):
-        dotenv.load_dotenv('.env')
+
+        target = os.environ.get("ENV")
+        if(target == None):
+            dotenv.load_dotenv('.env')
+        else:
+            name = "./env/." + target
+            dotenv.load_dotenv(name)
 
         self.client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
 
@@ -17,15 +24,13 @@ class Env:
 
         self.autosign = os.environ.get("AUTOSIGN") == 'true'
         self.multisig = os.environ.get("MULTISIG") == 'true'
-        self.sigversion = os.environ.get("SIGVERSION")
-        self.threshold = os.environ.get("THRESHOLD")
+        self.sigversion = int(os.environ.get("SIGVERSION"))
+        self.threshold = int(os.environ.get("THRESHOLD"))
 
         self.signer = os.environ.get("SIGNER")
         self.gov1 = os.environ.get("GOVERNOR1")
         self.gov2 = os.environ.get("GOVERNOR2")
         self.gov3 = os.environ.get("GOVERNOR3")
-
-        self.minter = Account.from_mnemonic(os.environ.get("MINTER_MNEMONIC"))
 
         self.vaults = [
             os.environ.get("VAULT1"),
@@ -76,7 +81,7 @@ class Env:
             self.govs = [self.gov1, self.gov2, self.gov3]
             self.msig = transaction.Multisig(self.sigversion, self.threshold, self.govs)
             self.sender = self.msig.address()
-            
+
         if self.autosign:
             self.signer_pk = Account.from_mnemonic(os.environ.get('SIGNER_MNEMONIC')).get_private_key()
 
@@ -84,3 +89,6 @@ class Env:
             gov2_pk = Account.from_mnemonic(os.environ.get('GOVERNOR2_MNEMONIC')).get_private_key()
             gov3_pk = Account.from_mnemonic(os.environ.get('GOVERNOR3_MNEMONIC')).get_private_key()
             self.gov_pks = [gov1_pk, gov2_pk, gov3_pk]
+
+        if os.environ.get("MINTER_MNEMONIC") != '':
+            self.minter = Account.from_mnemonic(os.environ.get("MINTER_MNEMONIC"))
