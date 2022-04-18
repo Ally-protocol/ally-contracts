@@ -1,68 +1,61 @@
-import os
-
-from pyteal import WideRatio
-import dotenv
 import pytest
 
+from ally.environment import Env
 from ally.account import Account
-from ally.operations.user import redeem_walgo
-from ally.operations.dev.admin import toggle_redeem
-from ally.utils import get_algod_client, get_app_global_state, get_governors, get_balances
+from ally.action.user import redeem_walgo
+from ally.action.admin import toggle_redeem
+from ally.utils import get_app_global_state, get_balances
 
 from algosdk import error
 
 PRECISION = 1_000_000
 FEE = 1000
-
-dotenv.load_dotenv('.env')
-
-client = get_algod_client(os.environ.get("ALGOD_URL"), os.environ.get("ALGOD_API_KEY"))
-app_id = int(os.environ.get("POOL_APP_ID"))
-walgo_id = int(os.environ.get("WALGO_ID"))
-funder = Account.from_mnemonic(os.environ.get("FUNDER_MNEMONIC"))
-minter = Account.from_mnemonic(os.environ.get("TEST_MINTER_MNEMONIC"))
-
 amount = 1_000_000
 
+env = Env()
+
 def test_redeem():
+    minter = env.minter
     address = minter.get_address()
     print(f"minter: {address}")
 
-    redeem_price = get_app_global_state(client, app_id)[b"rp"]
-    mint_price = get_app_global_state(client, app_id)[b"mp"]
+    redeem_price = get_app_global_state(env.client, env.pool_app_id)[b"rp"]
+    mint_price = get_app_global_state(env.client, env.pool_app_id)[b"mp"]
 
-    balances = get_balances(client, address)
+    balances = get_balances(env.client, address)
     previous_algo  = balances[0]
     previous_walgo = 0
-    if walgo_id in balances.keys():
-        previous_walgo = balances[walgo_id]
+
+    if env.walgo_asa_id in balances.keys():
+        previous_walgo = balances[env.walgo_asa_id]
 
     assert previous_walgo > 0
     print(f"previous_walgo: {previous_walgo}")
 
-    redeem_walgo(client, minter, app_id, walgo_id, previous_walgo)
+    redeem_walgo(minter, previous_walgo)
 
-    balances = get_balances(client, address)
+    balances = get_balances(env.client, address)
     current_algo  = balances[0]
-    current_walgo = balances[walgo_id]
+    current_walgo = balances[env.walgo_asa_id]
 
-    expected_redeem_algo = int((previous_walgo * redeem_price) / PRECISION)
+    expected_redeem_algo = int(float((previous_walgo * redeem_price) / PRECISION))
     print(f"redeem price: {redeem_price}")
     print(f"mint price: {mint_price}")
 
     assert current_walgo == 0
-    assert current_algo == previous_algo - FEE * 2 + expected_redeem_algo
+    assert current_algo == previous_algo - FEE * 3 + expected_redeem_algo
 
 def test_disabled_redeem():
+    minter = env.minter
     address = minter.get_address()
     print(f"minter: {address}")
 
     # disable redeem
-    toggle_redeem(client, funder, app_id)
+    toggle_redeem()
 
     with pytest.raises(error.AlgodHTTPError) as txn_info:
-        redeem_walgo(client, minter, app_id, walgo_id, amount)
+        redeem_walgo(minter, amount)
     assert "logic eval error: assert failed" in str(txn_info.value)
 
     # enable it back
-    toggle_redeem(client, funder, app_id)
+    toggle_redeem()
