@@ -157,15 +157,6 @@ def approval():
             Approve(),
         )
 
-    # Function to set a new governor - admin action
-    def set_governor():
-        new_governor = Txn.accounts[1]
-        return Seq(
-            Assert(Txn.sender() == governor),
-            App.globalPut(governor_key, new_governor),
-            Approve()
-        )
-
 
     def distribute():
         contract_address = Global.current_application_address()
