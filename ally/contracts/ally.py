@@ -10,6 +10,7 @@ FEE = 1_000
 governor_key = Bytes("gv")
 token_key = Bytes("tk")
 pool_id_key = Bytes("pl")
+set_pool_key = Bytes("sp")
 price_key = Bytes("pc")
 claimed_allys_key = Bytes("ca")
 
@@ -112,7 +113,9 @@ def approval():
         new_pool_id = Txn.application_args[1]
         return Seq(
             Assert(Txn.sender() == governor),
+            Assert(Not(App.globalGet(set_pool_key))),
             App.globalPut(pool_id_key, Btoi(new_pool_id)),
+            App.globalPut(set_pool_key, Int(1)),
             Approve()
         )
 
@@ -213,14 +216,12 @@ def approval():
         App.globalPut(governor_key, Txn.sender()),
         App.globalPut(price_key, Int(ONE_ALGO)),
         App.globalPut(claimed_allys_key, Int(0)),
+        App.globalPut(set_pool_key, Int(0)),
         Approve()
     )
 
     # Routes the NoOp to the corresponding action based on the first app param
     router = Seq(
-        Assert(Txn.close_remainder_to() == Global.zero_address()),
-        Assert(Txn.asset_close_to() == Global.zero_address()),
-        Assert(Txn.rekey_to() == Global.zero_address()),
         Cond(
             [Txn.application_args[0] == action_boot, bootstrap()],
             [Txn.application_args[0] == action_governor, set_governor()],

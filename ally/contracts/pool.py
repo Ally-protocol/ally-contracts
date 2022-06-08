@@ -6,7 +6,7 @@ TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
 ONE_ALGO = 1_000_000
 PRECISION = 1_000_000
 
-GROUP_COUNT = Int(4)
+VAULT_COUNT_PER_GROUP = Int(4)
 
 FEE = 1_000
 TEAL_VERSION = 6
@@ -18,6 +18,7 @@ mint_price_key = Bytes("mp")
 redeem_price_key = Bytes("rp")
 committed_algos_key = Bytes("co")
 allow_redeem_key = Bytes("ar")
+allow_claim_key = Bytes("ac")
 ally_reward_rate_key = Bytes("rr")
 fee_percentage_key = Bytes("fp")
 last_commit_price_key = Bytes("lc")
@@ -72,6 +73,7 @@ def approval():
             [App.globalGet(mint_price_key)]
         )
         return Seq(
+            Assert(amount > Int(0)),
             Return(amount)
         )
 
@@ -83,6 +85,7 @@ def approval():
             [Int(PRECISION)]
         )
         return Seq(
+            Assert(algos > Int(0)),
             Return(algos)
         )
 
@@ -195,10 +198,12 @@ def approval():
 
         return Seq(
             Assert(Txn.sender() == governor),
+            Assert(App.globalGet(allow_claim_key)),
             Assert(current_ratio > last_commit_price),
             Assert(algo_balance > Int(1_000)),
             Assert(amount > Int(1_000)),
             pay(ally_address, amount),
+            App.globalPut(allow_claim_key, Int(0)),
             App.globalPut(mint_price_key, algo_walgo_ratio()),
             App.globalPut(redeem_price_key, algo_walgo_ratio()),
             App.globalPut(ally_reward_rate_key, Int(0)),
@@ -255,8 +260,11 @@ def approval():
         group = Txn.application_args[2]
         sub_commit_algos = Div(
             algo_amount,
-            GROUP_COUNT
+            VAULT_COUNT_PER_GROUP
         )
+
+        contract_address = Global.current_application_address()
+        algo_balance = Balance(contract_address)
 
         vault1 = App.globalGet(redeem_vault1_key)
         vault2 = App.globalGet(redeem_vault2_key)
@@ -273,6 +281,7 @@ def approval():
 
         return Seq(
             Assert(Txn.sender() == governor),
+            Assert(algo_amount < algo_balance),
             If(group == arg_vault_group1).Then(
                 Seq(
                     pay(vault1, sub_commit_algos),
@@ -371,10 +380,14 @@ def approval():
         new_redeem_price = Btoi(Txn.application_args[3])
         new_fee_percentage = Btoi(Txn.application_args[4])
 
+        contract_address = Global.current_application_address()
+        algo_balance = Balance(contract_address)
+
         well_formed_commit = And(
             Global.group_size() == Int(1),
             app_call.type_enum() == TxnType.ApplicationCall,
             app_call.sender() == governor,
+            committed_algos < algo_balance,
             new_mint_price >= algo_walgo_ratio(),
             new_redeem_price <= algo_walgo_ratio(),
             new_fee_percentage > Int(0),
@@ -387,6 +400,7 @@ def approval():
             App.globalPut(last_commit_price_key, algo_walgo_ratio()),
             App.globalPut(mint_price_key, new_mint_price),
             App.globalPut(redeem_price_key, new_redeem_price),
+            App.globalPut(allow_claim_key, Int(1)),
             App.globalPut(fee_percentage_key, new_fee_percentage),
             Approve(),
         )
@@ -464,6 +478,7 @@ def approval():
         App.globalPut(fee_percentage_key, Int(10)),
         App.globalPut(max_mint_key, Int(10_000_000)),
         App.globalPut(allow_redeem_key, Int(1)),
+        App.globalPut(allow_claim_key, Int(0)),
         App.globalPut(ally_reward_rate_key, Int(0)),
         App.globalPut(committed_algos_key, Int(0)),
         App.globalPut(promised_allys_key, Int(0)),
@@ -473,9 +488,6 @@ def approval():
 
     # Routes the NoOp to the corresponding action based on the first app param
     router = Seq(
-        Assert(Txn.close_remainder_to() == Global.zero_address()),
-        Assert(Txn.asset_close_to() == Global.zero_address()),
-        Assert(Txn.rekey_to() == Global.zero_address()),
         Cond(
             [Txn.application_args[0] == action_boot, bootstrap()],
             [Txn.application_args[0] == action_governor, set_governor()],
