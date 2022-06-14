@@ -73,7 +73,7 @@ def approval():
             [App.globalGet(mint_price_key)]
         )
         return Seq(
-            Assert(amount > Int(0)),
+            Assert(algos > Int(FEE)),
             Return(amount)
         )
 
@@ -85,7 +85,7 @@ def approval():
             [Int(PRECISION)]
         )
         return Seq(
-            Assert(algos > Int(0)),
+            Assert(amount > Int(FEE)),
             Return(algos)
         )
 
