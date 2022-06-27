@@ -2,14 +2,16 @@
 Purpose: make a code upgrate in ally or pool contract
 Actor: The current contract governor (admin)
 Examples:
-- python deploy/update.py ally
-- python deploy/update.py pool
+- python deploy/update.py ally request
+- python deploy/update.py pool execution
 """
 
 import sys
 sys.path.insert(0, '')
 
 from base64 import b64decode
+from hashlib import sha256
+
 from algosdk.future import transaction
 from ally.environment import Env
 from ally.process import process_txn
@@ -29,12 +31,18 @@ if __name__ == '__main__':
         clear_result = env.client.compile(ally_clear_src())
         app_id = env.ally_app_id
 
+    action = sys.argv[2]
+
     app_bytes = b64decode(app_result["result"])
     clear_bytes = b64decode(clear_result["result"])
+
+    app_bytes_arg = sha256(app_bytes).hexdigest()
+    clear_bytes_arg = sha256(clear_bytes).hexdigest()
 
     txn = transaction.ApplicationUpdateTxn(
         sender=env.sender,
         sp=env.client.suggested_params(),
+        app_args=[action, app_bytes_arg, clear_bytes_arg],
         index=app_id,
         approval_program=app_bytes,
         clear_program=clear_bytes

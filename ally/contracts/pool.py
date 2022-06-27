@@ -1,4 +1,6 @@
 import os
+from pickle import GLOBAL
+from urllib import request
 
 from pyteal import *
 
@@ -7,6 +9,7 @@ ONE_ALGO = 1_000_000
 PRECISION = 1_000_000
 
 GROUP_COUNT = Int(4)
+TIME_DELAY = Int(604_800) # 7 days
 
 FEE = 1_000
 TEAL_VERSION = 6
@@ -38,6 +41,11 @@ redeem_vault10_key = Bytes("rv10")
 redeem_vault11_key = Bytes("rv11")
 redeem_vault12_key = Bytes("rv12")
 
+# time delay
+approval_app_key = Bytes("ap")
+clear_app_key = Bytes("cp")
+request_time_key = Bytes("rt")
+
 # Local State
 allys_key = Bytes("allys")
 
@@ -56,6 +64,8 @@ action_toggle = Bytes("toggle_redeem")
 action_commit = Bytes("commit")
 action_mint = Bytes("mint")
 action_redeem = Bytes("redeem")
+action_update_request = Bytes("update_request")
+action_update_execution = Bytes("update_execution")
 
 arg_vault_group1 = Bytes("vault_group1")
 arg_vault_group2 = Bytes("vault_group2")
@@ -471,6 +481,30 @@ def approval():
         Approve()
     )
 
+    # Time delay to update contract
+    def handle_update():
+        action = Txn.application_args[0]
+        approval_app = Txn.application_args[1]
+        clear_app = Txn.application_args[2]
+        return Seq(
+            Assert(Txn.sender() == governor),
+            If(action == action_update_request).Then(
+                Seq(
+                    App.globalPut(approval_app_key, approval_app),
+                    App.globalPut(clear_app_key, clear_app),
+                    App.globalPut(request_time_key, Global.latest_timestamp()),
+                    Reject()
+                )
+            ).ElseIf(action == action_update_execution).Then(
+                Seq(
+                    Assert(App.globalGet(request_time_key) - Global.latest_timestamp() > TIME_DELAY),
+                    Assert(approval_app == App.globalGet(approval_app_key)),
+                    Assert(clear_app == App.globalGet(clear_app_key)),
+                    Approve()
+                )
+            ),
+        )   
+
     # Routes the NoOp to the corresponding action based on the first app param
     router = Seq(
         Assert(Txn.close_remainder_to() == Global.zero_address()),
@@ -499,7 +533,7 @@ def approval():
     return Cond(
         [Txn.application_id() == Int(0), handle_creation],
         [Txn.on_completion() == OnComplete.DeleteApplication, Return(Txn.sender() == governor)],
-        [Txn.on_completion() == OnComplete.UpdateApplication, Return(Txn.sender() == governor)],
+        [Txn.on_completion() == OnComplete.UpdateApplication, handle_update],
         [Txn.on_completion() == OnComplete.CloseOut, Approve()],
         [Txn.on_completion() == OnComplete.OptIn, Approve()],
         [Txn.on_completion() == OnComplete.NoOp, router],
