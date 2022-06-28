@@ -466,6 +466,18 @@ def approval():
             Approve(),
         )
 
+    # Function to redeem users' walgo tokens - user action
+    def request_update_contract():
+        approval_app = Txn.application_args[1]
+        clear_app = Txn.application_args[2]
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(approval_app_key, approval_app),
+            App.globalPut(clear_app_key, clear_app),
+            App.globalPut(request_time_key, Global.latest_timestamp()),
+            Approve(),
+        )
+
     # Initialize the Global State on creation
     handle_creation = Seq(
         App.globalPut(mint_price_key, Int(ONE_ALGO)),
@@ -478,32 +490,20 @@ def approval():
         App.globalPut(committed_algos_key, Int(0)),
         App.globalPut(promised_allys_key, Int(0)),
         App.globalPut(governor_key, Txn.sender()),
+        App.globalPut(request_time_key, Int(0)),
         Approve()
     )
 
     # Time delay to update contract
-    def handle_update():
-        action = Txn.application_args[0]
-        approval_app = Txn.application_args[1]
-        clear_app = Txn.application_args[2]
-        return Seq(
-            Assert(Txn.sender() == governor),
-            If(action == action_update_request).Then(
-                Seq(
-                    App.globalPut(approval_app_key, approval_app),
-                    App.globalPut(clear_app_key, clear_app),
-                    App.globalPut(request_time_key, Global.latest_timestamp()),
-                    Reject()
-                )
-            ).ElseIf(action == action_update_execution).Then(
-                Seq(
-                    Assert(App.globalGet(request_time_key) - Global.latest_timestamp() > TIME_DELAY),
-                    Assert(approval_app == App.globalGet(approval_app_key)),
-                    Assert(clear_app == App.globalGet(clear_app_key)),
-                    Approve()
-                )
-            ),
-        )   
+    handle_update = Seq(
+        Assert(Txn.sender() == governor),
+        Assert(App.globalGet(request_time_key) > Int(0)),
+        Assert(Global.latest_timestamp() - App.globalGet(request_time_key) > TIME_DELAY),
+        Assert(Txn.application_args[0] == App.globalGet(approval_app_key)), # args[0] includes SHA-256 hash value of approval app
+        Assert(Txn.application_args[1] == App.globalGet(clear_app_key)), # args[1] includes SHA-256 hash value of clear app
+        App.globalPut(request_time_key, Int(0)),
+        Approve()
+    )   
 
     # Routes the NoOp to the corresponding action based on the first app param
     router = Seq(
@@ -526,6 +526,7 @@ def approval():
             [Txn.application_args[0] == action_commit, commit()],
             [Txn.application_args[0] == action_mint, mint()],
             [Txn.application_args[0] == action_redeem, redeem()],
+            [Txn.application_args[0] == action_update_request, request_update_contract()],
         )
     )
 
