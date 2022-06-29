@@ -5,6 +5,7 @@ TOTAL_SUPPLY = 1_000_000_000_000_000
 ONE_ALGO = 1_000_000
 TEAL_VERSION = 6
 FEE = 1_000
+TIME_DELAY = Int(604_800) # 7 days
 
 # Global State
 governor_key = Bytes("gv")
@@ -13,6 +14,11 @@ pool_id_key = Bytes("pl")
 set_pool_key = Bytes("sp")
 price_key = Bytes("pc")
 claimed_allys_key = Bytes("ca")
+
+# time delay
+approval_app_key = Bytes("ap")
+clear_app_key = Bytes("cp")
+request_time_key = Bytes("rt")
 
 # Local State
 allys_key = Bytes("allys")
@@ -25,6 +31,8 @@ action_claim = Bytes("claim")
 action_sell = Bytes("sell")
 action_distribute = Bytes("distribute")
 action_governor = Bytes("set_governor")
+action_update_request = Bytes("update_request")
+action_update_execution = Bytes("update_execution")
 
 
 def approval():
@@ -211,12 +219,36 @@ def approval():
             Approve(),
         )
 
+    # Function to redeem users' walgo tokens - user action
+    def request_update_contract():
+        approval_app = Txn.application_args[1]
+        clear_app = Txn.application_args[2]
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(approval_app_key, approval_app),
+            App.globalPut(clear_app_key, clear_app),
+            App.globalPut(request_time_key, Global.latest_timestamp()),
+            Approve(),
+        )
+
     # Initialize the Global State on creation
     handle_creation = Seq(
         App.globalPut(governor_key, Txn.sender()),
         App.globalPut(price_key, Int(ONE_ALGO)),
         App.globalPut(claimed_allys_key, Int(0)),
         App.globalPut(set_pool_key, Int(0)),
+        App.globalPut(request_time_key, Int(0)),
+        Approve()
+    )
+
+    # Time delay to update contract
+    handle_update = Seq(
+        Assert(Txn.sender() == governor),
+        Assert(App.globalGet(request_time_key) > Int(0)),
+        Assert(Global.latest_timestamp() - App.globalGet(request_time_key) > TIME_DELAY),
+        Assert(Txn.application_args[0] == App.globalGet(approval_app_key)), # args[0] includes SHA-256 hash value of approval app
+        Assert(Txn.application_args[1] == App.globalGet(clear_app_key)), # args[1] includes SHA-256 hash value of clear app
+        App.globalPut(request_time_key, Int(0)),
         Approve()
     )
 
@@ -231,6 +263,7 @@ def approval():
             [Txn.application_args[0] == action_distribute, distribute()],
             [Txn.application_args[0] == action_governor, set_governor()],
             [Txn.application_args[0] == action_sell, Reject()], #sell()],
+            [Txn.application_args[0] == action_update_request, request_update_contract()],
         )
     )
 
@@ -238,7 +271,7 @@ def approval():
     return Cond(
         [Txn.application_id() == Int(0), handle_creation],
         [Txn.on_completion() == OnComplete.DeleteApplication, Return(Txn.sender() == governor)],
-        [Txn.on_completion() == OnComplete.UpdateApplication, Return(Txn.sender() == governor)],
+        [Txn.on_completion() == OnComplete.UpdateApplication, handle_update],
         [Txn.on_completion() == OnComplete.CloseOut, Reject()],
         [Txn.on_completion() == OnComplete.OptIn, Approve()],
         [Txn.on_completion() == OnComplete.NoOp, router],

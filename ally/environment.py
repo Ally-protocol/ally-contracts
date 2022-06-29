@@ -76,19 +76,19 @@ class Env:
             self.ally_asa_id = int(os.environ.get("ALLY_ASA_ID"))
 
         self.sender = self.signer
+        self.signer_pk = Account.from_mnemonic(os.environ.get('SIGNER_MNEMONIC')).get_private_key()
 
         if self.multisig:
             self.govs = [self.gov1, self.gov2, self.gov3]
             self.msig = transaction.Multisig(self.sigversion, self.threshold, self.govs)
             self.sender = self.msig.address()
 
-        if self.autosign:
-            self.signer_pk = Account.from_mnemonic(os.environ.get('SIGNER_MNEMONIC')).get_private_key()
+            if self.autosign:
 
-            gov1_pk = Account.from_mnemonic(os.environ.get('GOVERNOR1_MNEMONIC')).get_private_key()
-            gov2_pk = Account.from_mnemonic(os.environ.get('GOVERNOR2_MNEMONIC')).get_private_key()
-            gov3_pk = Account.from_mnemonic(os.environ.get('GOVERNOR3_MNEMONIC')).get_private_key()
-            self.gov_pks = [gov1_pk, gov2_pk, gov3_pk]
+                gov1_pk = Account.from_mnemonic(os.environ.get('GOVERNOR1_MNEMONIC')).get_private_key()
+                gov2_pk = Account.from_mnemonic(os.environ.get('GOVERNOR2_MNEMONIC')).get_private_key()
+                gov3_pk = Account.from_mnemonic(os.environ.get('GOVERNOR3_MNEMONIC')).get_private_key()
+                self.gov_pks = [gov1_pk, gov2_pk, gov3_pk]
 
         if os.environ.get("MINTER_MNEMONIC") != '':
             self.minter = Account.from_mnemonic(os.environ.get("MINTER_MNEMONIC"))

@@ -1,5 +1,4 @@
 import os
-
 from pyteal import *
 
 TOTAL_SUPPLY = 0xFFFFFFFFFFFFFFFF
@@ -7,6 +6,7 @@ ONE_ALGO = 1_000_000
 PRECISION = 1_000_000
 
 VAULT_COUNT_PER_GROUP = Int(4)
+TIME_DELAY = Int(604_800) # 7 days
 
 FEE = 1_000
 TEAL_VERSION = 6
@@ -39,6 +39,11 @@ redeem_vault10_key = Bytes("rv10")
 redeem_vault11_key = Bytes("rv11")
 redeem_vault12_key = Bytes("rv12")
 
+# time delay
+approval_app_key = Bytes("ap")
+clear_app_key = Bytes("cp")
+request_time_key = Bytes("rt")
+
 # Local State
 allys_key = Bytes("allys")
 
@@ -57,6 +62,8 @@ action_toggle = Bytes("toggle_redeem")
 action_commit = Bytes("commit")
 action_mint = Bytes("mint")
 action_redeem = Bytes("redeem")
+action_update_request = Bytes("update_request")
+action_update_execution = Bytes("update_execution")
 
 arg_vault_group1 = Bytes("vault_group1")
 arg_vault_group2 = Bytes("vault_group2")
@@ -470,6 +477,18 @@ def approval():
             Approve(),
         )
 
+    # Function to redeem users' walgo tokens - user action
+    def request_update_contract():
+        approval_app = Txn.application_args[1]
+        clear_app = Txn.application_args[2]
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(approval_app_key, approval_app),
+            App.globalPut(clear_app_key, clear_app),
+            App.globalPut(request_time_key, Global.latest_timestamp()),
+            Approve(),
+        )
+
     # Initialize the Global State on creation
     handle_creation = Seq(
         App.globalPut(mint_price_key, Int(ONE_ALGO)),
@@ -483,8 +502,20 @@ def approval():
         App.globalPut(committed_algos_key, Int(0)),
         App.globalPut(promised_allys_key, Int(0)),
         App.globalPut(governor_key, Txn.sender()),
+        App.globalPut(request_time_key, Int(0)),
         Approve()
     )
+
+    # Time delay to update contract
+    handle_update = Seq(
+        Assert(Txn.sender() == governor),
+        Assert(App.globalGet(request_time_key) > Int(0)),
+        Assert(Global.latest_timestamp() - App.globalGet(request_time_key) > TIME_DELAY),
+        Assert(Txn.application_args[0] == App.globalGet(approval_app_key)), # args[0] includes SHA-256 hash value of approval app
+        Assert(Txn.application_args[1] == App.globalGet(clear_app_key)), # args[1] includes SHA-256 hash value of clear app
+        App.globalPut(request_time_key, Int(0)),
+        Approve()
+    )   
 
     # Routes the NoOp to the corresponding action based on the first app param
     router = Seq(
@@ -504,6 +535,7 @@ def approval():
             [Txn.application_args[0] == action_commit, commit()],
             [Txn.application_args[0] == action_mint, mint()],
             [Txn.application_args[0] == action_redeem, redeem()],
+            [Txn.application_args[0] == action_update_request, request_update_contract()],
         )
     )
 
@@ -511,7 +543,7 @@ def approval():
     return Cond(
         [Txn.application_id() == Int(0), handle_creation],
         [Txn.on_completion() == OnComplete.DeleteApplication, Return(Txn.sender() == governor)],
-        [Txn.on_completion() == OnComplete.UpdateApplication, Return(Txn.sender() == governor)],
+        [Txn.on_completion() == OnComplete.UpdateApplication, handle_update],
         [Txn.on_completion() == OnComplete.CloseOut, Approve()],
         [Txn.on_completion() == OnComplete.OptIn, Approve()],
         [Txn.on_completion() == OnComplete.NoOp, router],
