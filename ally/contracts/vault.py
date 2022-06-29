@@ -15,6 +15,7 @@ committed_algos_key = Bytes("co")
 allow_redeem_key = Bytes("ar")
 
 action_governor = Bytes("set_governor")
+action_redeem_price = Bytes("set_redeem_price")
 action_commit = Bytes("commit")
 action_vote = Bytes("vote")
 action_redeem = Bytes("redeem")
@@ -75,15 +76,28 @@ def approval():
             Approve()
         )
 
+    # Function to set a new redeem price - admin action
+    def set_redeem_price():
+        new_redeem_price = Btoi(Txn.application_args[1])
+        return Seq(
+            Assert(Txn.sender() == governor),
+            App.globalPut(redeem_price_key, new_redeem_price),
+            Approve()
+        )
+
     def commit():
         app_call = Gtxn[0]
         committed_algos = Btoi(Txn.application_args[2])
         redeem_price = Btoi(Txn.application_args[3])
 
+        contract_address = Global.current_application_address()
+        algo_balance = Balance(contract_address)
+
         well_formed_commit = And(
             Global.group_size() == Int(1),
             app_call.type_enum() == TxnType.ApplicationCall,
             app_call.sender() == governor,
+            committed_algos <= algo_balance,
         )
         
         return Seq(
@@ -151,7 +165,7 @@ def approval():
             ),
             pay(
                 asset_xfer.sender(),
-                algos_to_redeem(asset_xfer.asset_amount())
+                redeem_amount
             ),
             Approve(),
         )
@@ -174,6 +188,7 @@ def approval():
         Assert(Txn.rekey_to() == Global.zero_address()),
         Cond(
             [Txn.application_args[0] == action_governor, set_governor()],
+            [Txn.application_args[0] == action_redeem_price, set_redeem_price()],
             [Txn.application_args[0] == action_commit, commit()],
             [Txn.application_args[0] == action_vote, vote()],
             [Txn.application_args[0] == action_redeem, redeem()],

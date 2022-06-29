@@ -43,19 +43,6 @@ def test_set_ally_price():
 
     assert new_ally_price == current_ally_price
 
-def test_set_pool_id():
-    state = get_app_global_state(env.client, env.ally_app_id)
-    previous_pool_id = state[b"pl"]
-    new_pool_id = env.pool_app_id
-
-    assert previous_pool_id > 0
-
-    set_pool_id(new_pool_id)
-    state = get_app_global_state(env.client, env.ally_app_id)
-    current_pool_id = state[b"pl"]
-
-    assert new_pool_id == current_pool_id
-
 def test_ally_reward_rate():
     state = get_app_global_state(env.client, env.pool_app_id)
     current_ally_reward_rate = state[b"rr"]
