@@ -65,6 +65,7 @@ python deploy/bootstrap.py ally
 These commands returns the WALGO_ID and ALLY_ID in the "pt" and "tk" key. Copy it to .env.
 
 - Update contract
+
 Ally supports time delay function to update contract.
 There are 2 steps to update contract codes
 
