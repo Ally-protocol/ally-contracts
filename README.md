@@ -4,17 +4,19 @@
 
 - Install Docker and Docker-Compose.
 
-- Set up python virtual environment.
+- Set up Python virtual environment.
 
 ```
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-- Install Dependencies
+- Install dependencies
 ```
 pip install -r requirements.txt
 ```
+
+- Install Sandbox
 
 First, start an instance of sandbox (requires Docker):
 
@@ -28,6 +30,8 @@ When finished, the sandbox can be stopped with:
 ./sandbox down
 ```
 
+- Get test accounts
+
 Before running commands you have to create the .env file based on the .env.example
 
 In order to get the MNEMONICS for 3 governors, 1 funder and 1 minter, run:
@@ -38,12 +42,12 @@ python setup.py
 
 and fill the governors, minter and funder mnemonics from that command's output
 
-this only works as a shortcut for the local sandbox, when using testnets or mainnet
+This only works as a shortcut for the local sandbox, when using testnets or mainnet
 you need to create accounts manually on AlgoSigner.
 
-also the MULTISIG_THRESHOLD should be filled with a number equal or less than the amount of governors - currently 3
+Also the MULTISIG_THRESHOLD should be filled with a number equal or less than the amount of governors - currently 3
 
-### Contract Deploy and update
+### Contract deploy and update
 
 - Deploy contract
 
@@ -86,7 +90,7 @@ python deploy/update_execution.py pool
 Contract code is updated only when the current timestamp is greater than the request timestamp plus the 7-day protection window (stored in global state in seconds).
 And its Approval Program or Clear State Program, when hashed by the smart contract, match those that are stored in global state
 
-### Admin Actions
+### Admin actions
 
 - Set pool app id to ally contract
 
