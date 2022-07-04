@@ -76,7 +76,8 @@ class Env:
             self.ally_asa_id = int(os.environ.get("ALLY_ASA_ID"))
 
         self.sender = self.signer
-        self.signer_pk = Account.from_mnemonic(os.environ.get('SIGNER_MNEMONIC')).get_private_key()
+        if self.autosign == 'true':
+            self.signer_pk = Account.from_mnemonic(os.environ.get('SIGNER_MNEMONIC')).get_private_key()
 
         if self.multisig:
             self.govs = [self.gov1, self.gov2, self.gov3]
