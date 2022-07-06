@@ -4,7 +4,7 @@ from pyteal import *
 
 ONE_ALGO = 1_000_000
 MIN_BALANCE = 110_000
-TEAL_VERSION = 5
+TEAL_VERSION = 6
 
 # Global State
 governor_key = Bytes("gv")
