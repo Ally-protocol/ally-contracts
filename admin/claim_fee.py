@@ -1,7 +1,7 @@
 """
-Purpose: manipulate the maximum mint amount per transaction
+Purpose: finish a governance period by claiming the fee and setting the pool to free mint/redeem
 Actor: The current contract governor (admin)
-When: setting claiming the pool fee
+When: After receiving governance rewards
 How: `python admin/claim_fee.py`
 """
 
