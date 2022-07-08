@@ -61,17 +61,19 @@ if __name__ == '__main__':
         )
 
     response = process_txn(env, txn)
-    app_id = response.application_index
-    assert app_id is not None and app_id > 0
     
-    app_address = get_application_address(app_id)
-    print(f"APP ID: {app_id}")
-    print(f"APP ADDRESS: {app_address}")
+    if env.autosign:
+        app_id = response.application_index
+        assert app_id is not None and app_id > 0
+        
+        app_address = get_application_address(app_id)
+        print(f"APP ID: {app_id}")
+        print(f"APP ADDRESS: {app_address}")
 
-    pay_txn = transaction.PaymentTxn(
-        sender=env.sender,
-        sp=env.client.suggested_params(),
-        receiver=app_address,
-        amt=1_001_000
-    )
-    process_txn(env, pay_txn)
+        pay_txn = transaction.PaymentTxn(
+            sender=env.sender,
+            sp=env.client.suggested_params(),
+            receiver=app_address,
+            amt=1_001_000
+        )
+        process_txn(env, pay_txn)
